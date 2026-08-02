@@ -15,6 +15,7 @@ from plugins.worldtimeapi import WorldTimeApiPlugin
 from plugins.whois_ import WhoisPlugin
 from plugins.webshot import WebshotPlugin
 from plugins.iplocation import IpLocationPlugin
+from plugins.tavily_search import TavilySearchPlugin
 
 
 class PluginManager:
@@ -40,14 +41,26 @@ class PluginManager:
             'whois': WhoisPlugin,
             'webshot': WebshotPlugin,
             'iplocation': IpLocationPlugin,
+            'tavily_search': TavilySearchPlugin,
         }
         self.plugins = [plugin_mapping[plugin]() for plugin in enabled_plugins if plugin in plugin_mapping]
 
     def get_functions_specs(self):
         """
-        Return the list of function specs that can be called by the model
+        Return the list of function specs that can be called by the model (legacy format)
         """
         return [spec for specs in map(lambda plugin: plugin.get_spec(), self.plugins) for spec in specs]
+
+    def get_tools_specs(self):
+        """
+        Return the list of tool specs in the new tools format required by OpenRouter/OpenAI.
+        Wraps each function spec as {"type": "function", "function": {...}}
+        """
+        return [
+            {"type": "function", "function": spec}
+            for specs in map(lambda plugin: plugin.get_spec(), self.plugins)
+            for spec in specs
+        ]
 
     async def call_function(self, function_name, helper, arguments):
         """

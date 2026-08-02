@@ -352,6 +352,11 @@ async def handle_direct_result(config, update: Update, response: any):
             await update.effective_message.reply_photo(**common_args, photo=value)
         elif format == 'path':
             await update.effective_message.reply_photo(**common_args, photo=open(value, 'rb'))
+    elif kind == 'text':
+        if format == 'markdown':
+            await update.effective_message.reply_text(**common_args, text=value, parse_mode=constants.ParseMode.MARKDOWN)
+        else:
+            await update.effective_message.reply_text(**common_args, text=value)
     elif kind == 'gif' or kind == 'file':
         if format == 'url':
             await update.effective_message.reply_document(**common_args, document=value)

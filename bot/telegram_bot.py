@@ -804,8 +804,7 @@ class ChatGPTTelegramBot:
             await update.effective_message.reply_text(
                 message_thread_id=get_thread_id(update),
                 reply_to_message_id=get_reply_to_message_id(self.config, update),
-                text=f"{localized_text('chat_fail', self.config['bot_language'])} {str(e)}",
-                parse_mode=constants.ParseMode.MARKDOWN
+                text=f"{localized_text('chat_fail', self.config['bot_language'])} {str(e)}"
             )
 
     async def inline_query(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

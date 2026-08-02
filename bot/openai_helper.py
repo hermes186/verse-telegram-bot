@@ -256,8 +256,8 @@ class OpenAIHelper:
             if self.config['enable_functions'] and not self.conversations_vision[chat_id]:
                 functions = self.plugin_manager.get_functions_specs()
                 if len(functions) > 0:
-                    common_args['functions'] = self.plugin_manager.get_functions_specs()
-                    common_args['function_call'] = 'auto'
+                    common_args['tools'] = self.plugin_manager.get_tools_specs()
+                    common_args['tool_choice'] = 'auto'
             return await self.client.chat.completions.create(**common_args)
 
         except openai.RateLimitError as e:
@@ -272,16 +272,20 @@ class OpenAIHelper:
     async def __handle_function_call(self, chat_id, response, stream=False, times=0, plugins_used=()):
         function_name = ''
         arguments = ''
+        tool_call_id = None
         if stream:
             async for item in response:
                 if len(item.choices) > 0:
                     first_choice = item.choices[0]
-                    if first_choice.delta and first_choice.delta.function_call:
-                        if first_choice.delta.function_call.name:
-                            function_name += first_choice.delta.function_call.name
-                        if first_choice.delta.function_call.arguments:
-                            arguments += first_choice.delta.function_call.arguments
-                    elif first_choice.finish_reason and first_choice.finish_reason == 'function_call':
+                    if first_choice.delta and first_choice.delta.tool_calls:
+                        tc = first_choice.delta.tool_calls[0]
+                        if tc.id:
+                            tool_call_id = tc.id
+                        if tc.function and tc.function.name:
+                            function_name += tc.function.name
+                        if tc.function and tc.function.arguments:
+                            arguments += tc.function.arguments
+                    elif first_choice.finish_reason and first_choice.finish_reason == 'tool_calls':
                         break
                     else:
                         return response, plugins_used
@@ -290,11 +294,11 @@ class OpenAIHelper:
         else:
             if len(response.choices) > 0:
                 first_choice = response.choices[0]
-                if first_choice.message.function_call:
-                    if first_choice.message.function_call.name:
-                        function_name += first_choice.message.function_call.name
-                    if first_choice.message.function_call.arguments:
-                        arguments += first_choice.message.function_call.arguments
+                if first_choice.message.tool_calls:
+                    tc = first_choice.message.tool_calls[0]
+                    function_name = tc.function.name or ''
+                    arguments = tc.function.arguments or ''
+                    tool_call_id = tc.id
                 else:
                     return response, plugins_used
             else:
@@ -316,8 +320,8 @@ class OpenAIHelper:
         response = await self.client.chat.completions.create(
             model=self.config['model'],
             messages=self.conversations[chat_id],
-            functions=self.plugin_manager.get_functions_specs(),
-            function_call='auto' if times < self.config['functions_max_consecutive_calls'] else 'none',
+            tools=self.plugin_manager.get_tools_specs(),
+            tool_choice='auto' if times < self.config['functions_max_consecutive_calls'] else 'none',
             stream=stream
         )
         return await self.__handle_function_call(chat_id, response, stream, times + 1, plugins_used)
@@ -584,11 +588,15 @@ class OpenAIHelper:
         max_age_minutes = self.config['max_conversation_age_minutes']
         return last_updated < now - datetime.timedelta(minutes=max_age_minutes)
 
-    def __add_function_call_to_history(self, chat_id, function_name, content):
+    def __add_function_call_to_history(self, chat_id, function_name, content, tool_call_id=None):
         """
-        Adds a function call to the conversation history
+        Adds a tool call result to the conversation history.
+        Uses tool role format when tool_call_id is provided.
         """
-        self.conversations[chat_id].append({"role": "function", "name": function_name, "content": content})
+        if tool_call_id:
+            self.conversations[chat_id].append({'role': 'tool', 'tool_call_id': tool_call_id, 'name': function_name, 'content': content})
+        else:
+            self.conversations[chat_id].append({"role": "function", "name": function_name, "content": content})
 
     def __add_to_history(self, chat_id, role, content):
         """
