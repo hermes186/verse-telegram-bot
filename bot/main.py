@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -30,7 +31,37 @@ def main():
     model = os.environ.get('OPENAI_MODEL', 'gpt-4o')
     functions_available = are_functions_available(model=model)
     max_tokens_default = default_max_tokens(model=model)
+
+    # Parse providers config if available
+    providers_raw = os.environ.get('PROVIDERS_CONFIG')
+    providers_config = None
+    if providers_raw:
+        try:
+            providers_config = json.loads(providers_raw)
+        except Exception as e:
+            logging.error(f'Failed to parse PROVIDERS_CONFIG JSON: {e}')
+
+    if not providers_config:
+        default_model = model
+        models_env = os.environ.get('OPENAI_MODELS', '')
+        if models_env:
+            models_list = [m.strip() for m in models_env.split(',') if m.strip()]
+        else:
+            models_list = [default_model]
+        if default_model not in models_list:
+            models_list.insert(0, default_model)
+
+        providers_config = {
+            'OpenRouter': {
+                'base_url': os.environ.get('OPENAI_BASE_URL', 'https://openrouter.ai/api/v1'),
+                'api_key': os.environ['OPENAI_API_KEY'],
+                'models': models_list
+            }
+        }
+
     openai_config = {
+        'providers': providers_config,
+        'base_url': os.environ.get('OPENAI_BASE_URL', 'https://openrouter.ai/api/v1'),
         'api_key': os.environ['OPENAI_API_KEY'],
         'show_usage': os.environ.get('SHOW_USAGE', 'false').lower() == 'true',
         'stream': os.environ.get('STREAM', 'true').lower() == 'true',

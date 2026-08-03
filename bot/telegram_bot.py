@@ -41,6 +41,8 @@ class ChatGPTTelegramBot:
         self.commands = [
             BotCommand(command='help', description=localized_text('help_description', bot_language)),
             BotCommand(command='reset', description=localized_text('reset_description', bot_language)),
+            BotCommand(command='provider', description='切换 API 提供商 (Provider)'),
+            BotCommand(command='model', description='切换 当前 Provider 的模型 (Model)'),
             BotCommand(command='stats', description=localized_text('stats_description', bot_language)),
             BotCommand(command='resend', description=localized_text('resend_description', bot_language))
         ]
@@ -850,11 +852,116 @@ class ChatGPTTelegramBot:
         except Exception as e:
             logging.error(f'An error occurred while generating the result card for inline query {e}')
 
+
+    async def provider_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Command handler for /provider to switch API providers.
+        """
+        if not await is_allowed(self.config, update, context):
+            await self.send_disallowed_message(update, context)
+            return
+
+        chat_id = update.effective_chat.id
+        providers = self.openai.get_providers()
+        current_p = self.openai.get_chat_provider(chat_id)
+        current_m = self.openai.get_chat_model(chat_id)
+
+        keyboard = []
+        for pname in providers:
+            label = f"✅ {pname}" if pname == current_p else pname
+            keyboard.append([InlineKeyboardButton(label, callback_data=f"select_provider:{pname}")])
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        text = (
+            f"🌐 *选择 API 提供商 (Provider)*\n\n"
+            f"当前 Provider: `{current_p}`\n"
+            f"当前生效模型: `{current_m}`\n\n"
+            f"请在下方选择："
+        )
+        await update.effective_message.reply_text(
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode=constants.ParseMode.MARKDOWN
+        )
+
+    async def model_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Command handler for /model to switch models under current provider.
+        """
+        if not await is_allowed(self.config, update, context):
+            await self.send_disallowed_message(update, context)
+            return
+
+        chat_id = update.effective_chat.id
+        current_p = self.openai.get_chat_provider(chat_id)
+        models = self.openai.get_models_for_provider(current_p)
+        current_m = self.openai.get_chat_model(chat_id)
+
+        if not models:
+            await update.effective_message.reply_text(
+                text=f"⚠️ 当前 Provider `{current_p}` 未配置可选模型列表。",
+                parse_mode=constants.ParseMode.MARKDOWN
+            )
+            return
+
+        keyboard = []
+        for mname in models:
+            label = f"✅ {mname}" if mname == current_m else mname
+            keyboard.append([InlineKeyboardButton(label, callback_data=f"select_model:{mname}")])
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        text = (
+            f"🤖 *选择模型 (Model)*\n\n"
+            f"当前 Provider: `{current_p}`\n"
+            f"当前生效模型: `{current_m}`\n\n"
+            f"请选择同 Provider 下的其他模型："
+        )
+        await update.effective_message.reply_text(
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode=constants.ParseMode.MARKDOWN
+        )
+
+    async def handle_select_provider(self, update: Update, context: CallbackContext):
+        query = update.callback_query
+        await query.answer()
+        chat_id = update.effective_chat.id
+        provider_name = query.data.split('select_provider:')[1]
+
+        new_p, new_m = self.openai.set_chat_provider(chat_id, provider_name)
+        text = (
+            f"✅ *已切换 API 提供商*\n\n"
+            f"当前 Provider: `{new_p}`\n"
+            f"默认生效模型: `{new_m}`\n\n"
+            f"提示：可使用 /model 指令自由切换该 Provider 下的其他模型。"
+        )
+        await query.edit_message_text(text=text, parse_mode=constants.ParseMode.MARKDOWN)
+
+    async def handle_select_model(self, update: Update, context: CallbackContext):
+        query = update.callback_query
+        await query.answer()
+        chat_id = update.effective_chat.id
+        model_name = query.data.split('select_model:')[1]
+
+        curr_p, new_m = self.openai.set_chat_model(chat_id, model_name)
+        text = (
+            f"✅ *已成功切换模型*\n\n"
+            f"当前 Provider: `{curr_p}`\n"
+            f"生效模型: `{new_m}`"
+        )
+        await query.edit_message_text(text=text, parse_mode=constants.ParseMode.MARKDOWN)
+
     async def handle_callback_inline_query(self, update: Update, context: CallbackContext):
         """
-        Handle the callback query from the inline query result
+        Handle the callback query from the inline query result or provider/model button selections
         """
         callback_data = update.callback_query.data
+        if callback_data.startswith('select_provider:'):
+            await self.handle_select_provider(update, context)
+            return
+        elif callback_data.startswith('select_model:'):
+            await self.handle_select_model(update, context)
+            return
         user_id = update.callback_query.from_user.id
         inline_message_id = update.callback_query.inline_message_id
         name = update.callback_query.from_user.name
@@ -1056,6 +1163,8 @@ class ChatGPTTelegramBot:
 
         application.add_handler(CommandHandler('reset', self.reset))
         application.add_handler(CommandHandler('help', self.help))
+        application.add_handler(CommandHandler('provider', self.provider_command))
+        application.add_handler(CommandHandler('model', self.model_command))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('tts', self.tts))
         application.add_handler(CommandHandler('start', self.help))

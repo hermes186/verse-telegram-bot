@@ -103,13 +103,81 @@ class OpenAIHelper:
         :param config: A dictionary containing the GPT configuration
         :param plugin_manager: The plugin manager
         """
-        http_client = httpx.AsyncClient(proxy=config['proxy']) if 'proxy' in config else None
-        self.client = openai.AsyncOpenAI(api_key=config['api_key'], http_client=http_client)
         self.config = config
         self.plugin_manager = plugin_manager
+
+        # Setup providers configuration
+        self.providers: dict = config.get('providers', {})
+        if not self.providers:
+            default_pname = config.get('default_provider_name', 'OpenRouter')
+            self.providers = {
+                default_pname: {
+                    'base_url': config.get('base_url', 'https://openrouter.ai/api/v1'),
+                    'api_key': config.get('api_key'),
+                    'models': [config.get('model', 'gpt-4o')]
+                }
+            }
+        self.default_provider_name = list(self.providers.keys())[0]
+
+        proxy = config.get('proxy')
+        http_client = httpx.AsyncClient(proxy=proxy) if proxy else None
+
+        self.clients = {}
+        for pname, pinfo in self.providers.items():
+            kwargs = {'api_key': pinfo.get('api_key') or config.get('api_key')}
+            if pinfo.get('base_url'):
+                kwargs['base_url'] = pinfo['base_url']
+            if http_client:
+                kwargs['http_client'] = http_client
+            self.clients[pname] = openai.AsyncOpenAI(**kwargs)
+
+        # Legacy fallback single client
+        self.client = self.clients[self.default_provider_name]
+
+        self.user_providers: dict[int, str] = {}  # {chat_id: provider_name}
+        self.user_models: dict[int, str] = {}  # {chat_id: model_name}
+
         self.conversations: dict[int: list] = {}  # {chat_id: history}
         self.conversations_vision: dict[int: bool] = {}  # {chat_id: is_vision}
         self.last_updated: dict[int: datetime] = {}  # {chat_id: last_update_timestamp}
+
+    def get_providers(self) -> list[str]:
+        return list(self.providers.keys())
+
+    def get_models_for_provider(self, provider_name: str) -> list[str]:
+        if provider_name in self.providers:
+            return self.providers[provider_name].get('models', [])
+        return []
+
+    def get_chat_provider(self, chat_id: int) -> str:
+        return self.user_providers.get(chat_id, self.default_provider_name)
+
+    def get_chat_model(self, chat_id: int) -> str:
+        provider_name = self.get_chat_provider(chat_id)
+        if chat_id in self.user_models:
+            return self.user_models[chat_id]
+        models = self.get_models_for_provider(provider_name)
+        if models:
+            return models[0]
+        return self.config.get('model', 'gpt-4o')
+
+    def set_chat_provider(self, chat_id: int, provider_name: str) -> tuple[str, str]:
+        if provider_name not in self.providers:
+            raise ValueError(f"Provider {provider_name} not found")
+        self.user_providers[chat_id] = provider_name
+        models = self.get_models_for_provider(provider_name)
+        new_model = models[0] if models else self.config.get('model', 'gpt-4o')
+        self.user_models[chat_id] = new_model
+        return provider_name, new_model
+
+    def set_chat_model(self, chat_id: int, model_name: str) -> tuple[str, str]:
+        provider_name = self.get_chat_provider(chat_id)
+        self.user_models[chat_id] = model_name
+        return provider_name, model_name
+
+    def get_client_for_chat(self, chat_id: int) -> openai.AsyncOpenAI:
+        provider_name = self.get_chat_provider(chat_id)
+        return self.clients.get(provider_name, self.clients[self.default_provider_name])
 
     def get_conversation_stats(self, chat_id: int) -> tuple[int, int]:
         """
@@ -241,9 +309,11 @@ class OpenAIHelper:
                     logging.warning(f'Error while summarising chat history: {str(e)}. Popping elements instead...')
                     self.conversations[chat_id] = self.conversations[chat_id][-self.config['max_history_size']:]
 
-            max_tokens_str = 'max_completion_tokens' if self.config['model'] in O_MODELS else 'max_tokens'
+            chat_model = self.get_chat_model(chat_id)
+            client = self.get_client_for_chat(chat_id)
+            max_tokens_str = 'max_completion_tokens' if chat_model in O_MODELS else 'max_tokens'
             common_args = {
-                'model': self.config['model'] if not self.conversations_vision[chat_id] else self.config['vision_model'],
+                'model': chat_model if not self.conversations_vision[chat_id] else self.config['vision_model'],
                 'messages': self.conversations[chat_id],
                 'temperature': self.config['temperature'],
                 'n': self.config['n_choices'],
@@ -258,7 +328,7 @@ class OpenAIHelper:
                 if len(functions) > 0:
                     common_args['tools'] = self.plugin_manager.get_tools_specs()
                     common_args['tool_choice'] = 'auto'
-            return await self.client.chat.completions.create(**common_args)
+            return await client.chat.completions.create(**common_args)
 
         except openai.RateLimitError as e:
             raise e
@@ -316,9 +386,10 @@ class OpenAIHelper:
                                                                               'to the user.'}))
             return function_response, plugins_used
 
-        self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name, content=function_response)
-        response = await self.client.chat.completions.create(
-            model=self.config['model'],
+        chat_model = self.get_chat_model(chat_id)
+        client = self.get_client_for_chat(chat_id)
+        response = await client.chat.completions.create(
+            model=chat_model,
             messages=self.conversations[chat_id],
             tools=self.plugin_manager.get_tools_specs(),
             tool_choice='auto' if times < self.config['functions_max_consecutive_calls'] else 'none',
@@ -458,9 +529,8 @@ class OpenAIHelper:
             #     functions = self.plugin_manager.get_functions_specs()
             #     if len(functions) > 0:
             #         common_args['functions'] = self.plugin_manager.get_functions_specs()
-            #         common_args['function_call'] = 'auto'
-            
-            return await self.client.chat.completions.create(**common_args)
+            client = self.get_client_for_chat(chat_id)
+            return await client.chat.completions.create(**common_args)
 
         except openai.RateLimitError as e:
             raise e
@@ -572,7 +642,8 @@ class OpenAIHelper:
         """
         if content == '':
             content = self.config['assistant_prompt']
-        self.conversations[chat_id] = [{"role": "assistant" if self.config['model'] in O_MODELS else "system", "content": content}]
+        chat_model = self.get_chat_model(chat_id)
+        self.conversations[chat_id] = [{"role": "assistant" if chat_model in O_MODELS else "system", "content": content}]
         self.conversations_vision[chat_id] = False
 
     def __max_age_reached(self, chat_id) -> bool:
@@ -607,7 +678,7 @@ class OpenAIHelper:
         """
         self.conversations[chat_id].append({"role": role, "content": content})
 
-    async def __summarise(self, conversation) -> str:
+    async def __summarise(self, conversation, chat_id=None) -> str:
         """
         Summarises the conversation history.
         :param conversation: The conversation history
@@ -617,59 +688,56 @@ class OpenAIHelper:
             {"role": "assistant", "content": "Summarize this conversation in 700 characters or less"},
             {"role": "user", "content": str(conversation)}
         ]
-        response = await self.client.chat.completions.create(
-            model=self.config['model'],
+        client = self.get_client_for_chat(chat_id) if chat_id else self.client
+        chat_model = self.get_chat_model(chat_id) if chat_id else self.config['model']
+        response = await client.chat.completions.create(
+            model=chat_model,
             messages=messages,
-            temperature=1 if self.config['model'] in O_MODELS else 0.4
+            temperature=1 if chat_model in O_MODELS else 0.4
         )
         return response.choices[0].message.content
 
-    def __max_model_tokens(self):
+    def __max_model_tokens(self, chat_id=None):
         base = 4096
-        if self.config['model'] in GPT_3_MODELS:
+        model = self.get_chat_model(chat_id) if chat_id else self.config['model']
+        if model in GPT_3_MODELS:
             return base
-        if self.config['model'] in GPT_3_16K_MODELS:
+        if model in GPT_3_16K_MODELS:
             return base * 4
-        if self.config['model'] in GPT_4_MODELS:
+        if model in GPT_4_MODELS:
             return base * 2
-        if self.config['model'] in GPT_4_32K_MODELS:
+        if model in GPT_4_32K_MODELS:
             return base * 8
-        if self.config['model'] in GPT_4_VISION_MODELS:
+        if model in GPT_4_VISION_MODELS:
             return base * 31
-        if self.config['model'] in GPT_4_128K_MODELS:
+        if model in GPT_4_128K_MODELS:
             return base * 31
-        if self.config['model'] in GPT_4O_MODELS:
+        if model in GPT_4O_MODELS:
             return base * 31
-        elif self.config['model'] in O_MODELS:
-            # https://platform.openai.com/docs/models#o1
-            if self.config['model'] == "o1":
+        elif model in O_MODELS:
+            if model == "o1":
                 return 100_000
-            elif self.config['model'] == "o1-preview":
+            elif model == "o1-preview":
                 return 32_768
             else:
                 return 65_536
-        raise NotImplementedError(
-            f"Max tokens for model {self.config['model']} is not implemented yet."
-        )
+        return base * 31
 
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
-    def __count_tokens(self, messages) -> int:
+    def __count_tokens(self, messages, chat_id=None) -> int:
         """
         Counts the number of tokens required to send the given messages.
         :param messages: the messages to send
         :return: the number of tokens required
         """
-        model = self.config['model']
+        model = self.get_chat_model(chat_id) if chat_id else self.config['model']
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
             encoding = tiktoken.get_encoding("o200k_base")
 
-        if model in GPT_ALL_MODELS:
-            tokens_per_message = 3
-            tokens_per_name = 1
-        else:
-            raise NotImplementedError(f"""num_tokens_from_messages() is not implemented for model {model}.""")
+        tokens_per_message = 3
+        tokens_per_name = 1
         num_tokens = 0
         for message in messages:
             num_tokens += tokens_per_message
