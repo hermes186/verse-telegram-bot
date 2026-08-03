@@ -1080,8 +1080,7 @@ class ChatGPTTelegramBot:
         """
         Post initialization hook for the bot.
         """
-        await application.bot.set_my_commands(self.group_commands, scope=BotCommandScopeAllGroupChats())
-        await application.bot.set_my_commands(self.commands)
+        pass
 
     def run(self):
         """
