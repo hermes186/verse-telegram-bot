@@ -7,6 +7,7 @@ import tiktoken
 
 import openai
 
+import base64
 import json
 import httpx
 import io
@@ -122,6 +123,7 @@ class OpenAIHelper:
         self.conversations: dict[int: list] = {}  # {chat_id: history}
         self.conversations_vision: dict[int: bool] = {}  # {chat_id: is_vision}
         self.last_updated: dict[int: datetime] = {}  # {chat_id: last_update_timestamp}
+        self.models_without_tools: set[str] = set()
 
     def get_models(self) -> list[str]:
         return self.models
@@ -277,12 +279,23 @@ class OpenAIHelper:
                 'stream': stream
             }
 
-            if self.config['enable_functions'] and not self.conversations_vision[chat_id]:
+            if self.config['enable_functions'] and not self.conversations_vision[chat_id] and chat_model not in self.models_without_tools:
                 functions = self.plugin_manager.get_functions_specs()
                 if len(functions) > 0:
                     common_args['tools'] = self.plugin_manager.get_tools_specs()
                     common_args['tool_choice'] = 'auto'
-            return await client.chat.completions.create(**common_args)
+
+            try:
+                return await client.chat.completions.create(**common_args)
+            except Exception as e:
+                err_str = str(e).lower()
+                if ('tools' in common_args or 'tool_choice' in common_args) and ('tool' in err_str or '404' in err_str or 'not found' in err_str or 'support' in err_str):
+                    logging.warning(f'Model {chat_model} does not support tools/functions ({e}). Disabling tools for this model and retrying...')
+                    self.models_without_tools.add(chat_model)
+                    common_args.pop('tools', None)
+                    common_args.pop('tool_choice', None)
+                    return await client.chat.completions.create(**common_args)
+                raise e
 
         except openai.RateLimitError as e:
             raise e
@@ -384,14 +397,30 @@ class OpenAIHelper:
                 size=self.config['image_size']
             )
 
-            if len(response.data) == 0:
+            if not response.data or len(response.data) == 0:
                 logging.error(f'No response from GPT: {str(response)}')
                 raise Exception(
                     f"⚠️ _{localized_text('error', bot_language)}._ "
                     f"⚠️\n{localized_text('try_again', bot_language)}."
                 )
 
-            return response.data[0].url, self.config['image_size']
+            item = response.data[0]
+            if hasattr(item, 'url') and item.url:
+                if item.url.startswith('http://') or item.url.startswith('https://'):
+                    return item.url, self.config['image_size']
+                elif item.url.startswith('data:image'):
+                    header, base64_data = item.url.split(',', 1)
+                    img_bytes = base64.b64decode(base64_data)
+                    buf = io.BytesIO(img_bytes)
+                    buf.name = 'image.png'
+                    return buf, self.config['image_size']
+            if hasattr(item, 'b64_json') and item.b64_json:
+                img_bytes = base64.b64decode(item.b64_json)
+                buf = io.BytesIO(img_bytes)
+                buf.name = 'image.png'
+                return buf, self.config['image_size']
+
+            raise Exception(f"No photo in response from model: {item}")
         except Exception as e:
             raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
 
