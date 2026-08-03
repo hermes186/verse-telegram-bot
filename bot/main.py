@@ -36,7 +36,7 @@ def main():
     if models_env:
         models_list = [m.strip() for m in models_env.split(',') if m.strip()]
     else:
-        models_list = [model]
+        models_list = [model, 'anthropic/claude-haiku-4.5', 'google/gemini-2.5-flash-lite']
     if model not in models_list:
         models_list.insert(0, model)
 

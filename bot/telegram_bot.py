@@ -848,6 +848,22 @@ class ChatGPTTelegramBot:
             return
 
         chat_id = update.effective_chat.id
+
+        if context.args and len(context.args) > 0:
+            target_model = context.args[0].strip()
+            new_m = self.openai.set_chat_model(chat_id, target_model)
+            if target_model not in self.openai.models:
+                self.openai.models.append(target_model)
+            text = (
+                f"✅ *已成功切换模型*\n\n"
+                f"生效模型: `{new_m}`"
+            )
+            await update.effective_message.reply_text(
+                text=text,
+                parse_mode=constants.ParseMode.MARKDOWN
+            )
+            return
+
         models = self.openai.get_models()
         current_m = self.openai.get_chat_model(chat_id)
 
