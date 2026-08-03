@@ -106,78 +106,32 @@ class OpenAIHelper:
         self.config = config
         self.plugin_manager = plugin_manager
 
-        # Setup providers configuration
-        self.providers: dict = config.get('providers', {})
-        if not self.providers:
-            default_pname = config.get('default_provider_name', 'OpenRouter')
-            self.providers = {
-                default_pname: {
-                    'base_url': config.get('base_url', 'https://openrouter.ai/api/v1'),
-                    'api_key': config.get('api_key'),
-                    'models': [config.get('model', 'gpt-4o')]
-                }
-            }
-        self.default_provider_name = list(self.providers.keys())[0]
-
         proxy = config.get('proxy')
         http_client = httpx.AsyncClient(proxy=proxy) if proxy else None
+        kwargs = {'api_key': config['api_key']}
+        if config.get('base_url'):
+            kwargs['base_url'] = config['base_url']
+        if http_client:
+            kwargs['http_client'] = http_client
 
-        self.clients = {}
-        for pname, pinfo in self.providers.items():
-            kwargs = {'api_key': pinfo.get('api_key') or config.get('api_key')}
-            if pinfo.get('base_url'):
-                kwargs['base_url'] = pinfo['base_url']
-            if http_client:
-                kwargs['http_client'] = http_client
-            self.clients[pname] = openai.AsyncOpenAI(**kwargs)
+        self.client = openai.AsyncOpenAI(**kwargs)
 
-        # Legacy fallback single client
-        self.client = self.clients[self.default_provider_name]
-
-        self.user_providers: dict[int, str] = {}  # {chat_id: provider_name}
+        self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])
         self.user_models: dict[int, str] = {}  # {chat_id: model_name}
 
         self.conversations: dict[int: list] = {}  # {chat_id: history}
         self.conversations_vision: dict[int: bool] = {}  # {chat_id: is_vision}
         self.last_updated: dict[int: datetime] = {}  # {chat_id: last_update_timestamp}
 
-    def get_providers(self) -> list[str]:
-        return list(self.providers.keys())
-
-    def get_models_for_provider(self, provider_name: str) -> list[str]:
-        if provider_name in self.providers:
-            return self.providers[provider_name].get('models', [])
-        return []
-
-    def get_chat_provider(self, chat_id: int) -> str:
-        return self.user_providers.get(chat_id, self.default_provider_name)
+    def get_models(self) -> list[str]:
+        return self.models
 
     def get_chat_model(self, chat_id: int) -> str:
-        provider_name = self.get_chat_provider(chat_id)
-        if chat_id in self.user_models:
-            return self.user_models[chat_id]
-        models = self.get_models_for_provider(provider_name)
-        if models:
-            return models[0]
-        return self.config.get('model', 'gpt-4o')
+        return self.user_models.get(chat_id, self.config.get('model', 'gpt-4o'))
 
-    def set_chat_provider(self, chat_id: int, provider_name: str) -> tuple[str, str]:
-        if provider_name not in self.providers:
-            raise ValueError(f"Provider {provider_name} not found")
-        self.user_providers[chat_id] = provider_name
-        models = self.get_models_for_provider(provider_name)
-        new_model = models[0] if models else self.config.get('model', 'gpt-4o')
-        self.user_models[chat_id] = new_model
-        return provider_name, new_model
-
-    def set_chat_model(self, chat_id: int, model_name: str) -> tuple[str, str]:
-        provider_name = self.get_chat_provider(chat_id)
+    def set_chat_model(self, chat_id: int, model_name: str) -> str:
         self.user_models[chat_id] = model_name
-        return provider_name, model_name
-
-    def get_client_for_chat(self, chat_id: int) -> openai.AsyncOpenAI:
-        provider_name = self.get_chat_provider(chat_id)
-        return self.clients.get(provider_name, self.clients[self.default_provider_name])
+        return model_name
 
     def get_conversation_stats(self, chat_id: int) -> tuple[int, int]:
         """
@@ -310,7 +264,7 @@ class OpenAIHelper:
                     self.conversations[chat_id] = self.conversations[chat_id][-self.config['max_history_size']:]
 
             chat_model = self.get_chat_model(chat_id)
-            client = self.get_client_for_chat(chat_id)
+            client = self.client
             max_tokens_str = 'max_completion_tokens' if chat_model in O_MODELS else 'max_tokens'
             common_args = {
                 'model': chat_model if not self.conversations_vision[chat_id] else self.config['vision_model'],
@@ -403,7 +357,7 @@ class OpenAIHelper:
         self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name,
                                             content=function_response, tool_call_id=tool_call_id)
         chat_model = self.get_chat_model(chat_id)
-        client = self.get_client_for_chat(chat_id)
+        client = self.client
         response = await client.chat.completions.create(
             model=chat_model,
             messages=self.conversations[chat_id],
@@ -545,7 +499,7 @@ class OpenAIHelper:
             #     functions = self.plugin_manager.get_functions_specs()
             #     if len(functions) > 0:
             #         common_args['functions'] = self.plugin_manager.get_functions_specs()
-            client = self.get_client_for_chat(chat_id)
+            client = self.client
             return await client.chat.completions.create(**common_args)
 
         except openai.RateLimitError as e:
@@ -704,7 +658,7 @@ class OpenAIHelper:
             {"role": "assistant", "content": "Summarize this conversation in 700 characters or less"},
             {"role": "user", "content": str(conversation)}
         ]
-        client = self.get_client_for_chat(chat_id) if chat_id else self.client
+        client = self.client
         chat_model = self.get_chat_model(chat_id) if chat_id else self.config['model']
         response = await client.chat.completions.create(
             model=chat_model,
