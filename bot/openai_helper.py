@@ -770,7 +770,7 @@ class OpenAIHelper:
             num_tokens = base_tokens + tiles * 170
             return num_tokens
         else:
-            raise NotImplementedError(f"""unknown parameter detail={detail} for model {model}.""")
+            raise NotImplementedError(f"""unknown parameter detail={detail}.""")
 
     # No longer works as of July 21st 2023, as OpenAI has removed the billing API
     # def get_billing_current_month(self):
