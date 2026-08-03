@@ -267,7 +267,7 @@ class OpenAIHelper:
             client = self.client
             max_tokens_str = 'max_completion_tokens' if chat_model in O_MODELS else 'max_tokens'
             common_args = {
-                'model': chat_model if not self.conversations_vision[chat_id] else self.config['vision_model'],
+                'model': chat_model,
                 'messages': self.conversations[chat_id],
                 'temperature': self.config['temperature'],
                 'n': self.config['n_choices'],
@@ -481,8 +481,9 @@ class OpenAIHelper:
 
             message = {'role':'user', 'content':content}
 
+            chat_model = self.get_chat_model(chat_id)
             common_args = {
-                'model': self.config['vision_model'],
+                'model': chat_model,
                 'messages': self.conversations[chat_id][:-1] + [message],
                 'temperature': self.config['temperature'],
                 'n': 1, # several choices is not implemented yet
@@ -753,10 +754,6 @@ class OpenAIHelper:
         """
         image_file = io.BytesIO(image_bytes)
         image = Image.open(image_file)
-        model = self.config['vision_model']
-        if model not in GPT_4_VISION_MODELS:
-            raise NotImplementedError(f"""count_tokens_vision() is not implemented for model {model}.""")
-        
         w, h = image.size
         if w > h: w, h = h, w
         # this computation follows https://platform.openai.com/docs/guides/vision and https://openai.com/pricing#gpt-4-turbo
