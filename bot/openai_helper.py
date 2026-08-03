@@ -187,7 +187,7 @@ class OpenAIHelper:
         """
         if chat_id not in self.conversations:
             self.reset_chat_history(chat_id)
-        return len(self.conversations[chat_id]), self.__count_tokens(self.conversations[chat_id])
+        return len(self.conversations[chat_id]), self.__count_tokens(self.conversations[chat_id], chat_id=chat_id)
 
     async def get_chat_response(self, chat_id: int, query: str) -> tuple[str, str]:
         """
@@ -293,14 +293,14 @@ class OpenAIHelper:
             self.__add_to_history(chat_id, role="user", content=query)
 
             # Summarize the chat history if it's too long to avoid excessive token usage
-            token_count = self.__count_tokens(self.conversations[chat_id])
-            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.__max_model_tokens()
+            token_count = self.__count_tokens(self.conversations[chat_id], chat_id=chat_id)
+            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.__max_model_tokens(chat_id=chat_id)
             exceeded_max_history_size = len(self.conversations[chat_id]) > self.config['max_history_size']
 
             if exceeded_max_tokens or exceeded_max_history_size:
                 logging.info(f'Chat history for chat ID {chat_id} is too long. Summarising...')
                 try:
-                    summary = await self.__summarise(self.conversations[chat_id][:-1])
+                    summary = await self.__summarise(self.conversations[chat_id][:-1], chat_id=chat_id)
                     logging.debug(f'Summary: {summary}')
                     self.reset_chat_history(chat_id, self.conversations[chat_id][0]['content'])
                     self.__add_to_history(chat_id, role="assistant", content=summary)
@@ -374,6 +374,19 @@ class OpenAIHelper:
             else:
                 return response, plugins_used
 
+        # Required by tools API: add the assistant's tool_calls message to history
+        # before adding the tool response. Without this, the next API call will fail.
+        if tool_call_id:
+            self.conversations[chat_id].append({
+                'role': 'assistant',
+                'content': None,
+                'tool_calls': [{
+                    'id': tool_call_id,
+                    'type': 'function',
+                    'function': {'name': function_name, 'arguments': arguments}
+                }]
+            })
+
         logging.info(f'Calling function {function_name} with arguments {arguments}')
         function_response = await self.plugin_manager.call_function(function_name, self, arguments)
 
@@ -383,9 +396,12 @@ class OpenAIHelper:
         if is_direct_result(function_response):
             self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name,
                                                 content=json.dumps({'result': 'Done, the content has been sent'
-                                                                              'to the user.'}))
+                                                                              'to the user.'}),
+                                                tool_call_id=tool_call_id)
             return function_response, plugins_used
 
+        self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name,
+                                            content=function_response, tool_call_id=tool_call_id)
         chat_model = self.get_chat_model(chat_id)
         client = self.get_client_for_chat(chat_id)
         response = await client.chat.completions.create(
@@ -745,14 +761,28 @@ class OpenAIHelper:
                 if key == 'content':
                     if isinstance(value, str):
                         num_tokens += len(encoding.encode(value))
-                    else:
+                    elif isinstance(value, list):
+                        # Vision content or tool_calls-adjacent content
                         for message1 in value:
-                            if message1['type'] == 'image_url':
+                            if not isinstance(message1, dict):
+                                continue
+                            if message1.get('type') == 'image_url':
                                 image = decode_image(message1['image_url']['url'])
                                 num_tokens += self.__count_tokens_vision(image)
-                            else:
+                            elif message1.get('type') == 'text' and isinstance(message1.get('text'), str):
                                 num_tokens += len(encoding.encode(message1['text']))
-                else:
+                    # None (tool_calls messages) - skip
+                elif key == 'tool_calls':
+                    # Approximate: count function names and arguments as tokens
+                    if isinstance(value, list):
+                        for tc in value:
+                            if isinstance(tc, dict) and isinstance(tc.get('function'), dict):
+                                fn = tc['function']
+                                if isinstance(fn.get('name'), str):
+                                    num_tokens += len(encoding.encode(fn['name']))
+                                if isinstance(fn.get('arguments'), str):
+                                    num_tokens += len(encoding.encode(fn['arguments']))
+                elif isinstance(value, str):
                     num_tokens += len(encoding.encode(value))
                     if key == "name":
                         num_tokens += tokens_per_name
