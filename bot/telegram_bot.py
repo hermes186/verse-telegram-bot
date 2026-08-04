@@ -22,6 +22,7 @@ from utils import is_group_chat, get_thread_id, message_text, wrap_with_indicato
     cleanup_intermediate_files
 from openai_helper import OpenAIHelper, localized_text
 from usage_tracker import UsageTracker
+from document_parser import parse_document
 
 
 class ChatGPTTelegramBot:
@@ -644,13 +645,47 @@ class ChatGPTTelegramBot:
             f'New message received from user {update.message.from_user.name} (id: {update.message.from_user.id})')
         chat_id = update.effective_chat.id
         user_id = update.message.from_user.id
+        
+        # message_text extracts from text or caption
         prompt = message_text(update.message)
+        
+        # Intercept document attachments
+        if update.message.document:
+            file_id = update.message.document.file_id
+            file_name = update.message.document.file_name
+            _, ext = os.path.splitext(file_name.lower())
+            supported_exts = ['.pdf', '.docx', '.xlsx', '.pptx', '.txt']
+            if ext in supported_exts:
+                await update.effective_message.reply_chat_action(
+                    action=constants.ChatAction.TYPING,
+                    message_thread_id=get_thread_id(update)
+                )
+                try:
+                    file_obj = await context.bot.get_file(file_id)
+                    os.makedirs("scratch", exist_ok=True)
+                    local_path = os.path.join("scratch", f"{uuid4()}_{file_name}")
+                    await file_obj.download_to_drive(local_path)
+                    
+                    extracted_text = parse_document(local_path, file_name)
+                    
+                    if os.path.exists(local_path):
+                        os.remove(local_path)
+                        
+                    if extracted_text:
+                        if not prompt:
+                            prompt = "请提取并总结这份文档的主要内容"
+                        prompt = f"{prompt}\n\n[附带文档内容开始: {file_name}]\n{extracted_text}\n[附带文档内容结束]"
+                except Exception as e:
+                    logging.error(f"Error handling document: {e}")
+                    
         self.last_message[chat_id] = prompt
 
         if is_group_chat(update):
             trigger_keyword = self.config['group_trigger_keyword']
 
-            if prompt.lower().startswith(trigger_keyword.lower()) or update.message.text.lower().startswith('/chat'):
+            # Fix latent bug: update.message.text might be None for media messages
+            msg_text = update.message.text or ""
+            if prompt.lower().startswith(trigger_keyword.lower()) or msg_text.lower().startswith('/chat'):
                 if prompt.lower().startswith(trigger_keyword.lower()):
                     prompt = prompt[len(trigger_keyword):].strip()
 
