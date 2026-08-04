@@ -388,20 +388,33 @@ class OpenAIHelper:
 
     async def generate_image(self, prompt: str) -> tuple[str, str]:
         """
-        Generates an image from the given prompt using DALL·E model.
+        Generates an image from the given prompt using DALL·E or OpenAI compatible image model.
         :param prompt: The prompt to send to the model
         :return: The image URL and the image size
         """
         bot_language = self.config['bot_language']
         try:
-            response = await self.image_client.images.generate(
-                prompt=prompt,
-                n=1,
-                model=self.config['image_model'],
-                quality=self.config['image_quality'],
-                style=self.config['image_style'],
-                size=self.config['image_size']
-            )
+            gen_kwargs = {
+                'prompt': prompt,
+                'n': 1,
+                'model': self.config['image_model'],
+                'size': self.config['image_size']
+            }
+            if self.config.get('image_quality') in ('standard', 'hd'):
+                gen_kwargs['quality'] = self.config['image_quality']
+            if self.config.get('image_style') in ('vivid', 'natural'):
+                gen_kwargs['style'] = self.config['image_style']
+
+            try:
+                response = await self.image_client.images.generate(**gen_kwargs)
+            except Exception as e:
+                if 'quality' in gen_kwargs or 'style' in gen_kwargs:
+                    logging.warning(f"Image generation failed with parameters ({e}). Retrying with basic parameters...")
+                    gen_kwargs.pop('quality', None)
+                    gen_kwargs.pop('style', None)
+                    response = await self.image_client.images.generate(**gen_kwargs)
+                else:
+                    raise e
 
             if not response.data or len(response.data) == 0:
                 logging.error(f'No response from GPT: {str(response)}')
