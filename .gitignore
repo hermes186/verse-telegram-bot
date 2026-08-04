@@ -7,3 +7,7 @@ venv
 /.cache
 user_memories.json
 scratch/
+
+# Antigravity and Agent Artifacts
+.learnings/
+scratch/
