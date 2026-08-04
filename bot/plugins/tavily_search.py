@@ -100,8 +100,12 @@ class TavilySearchPlugin(Plugin):
         if not self.api_key:
             return {"error": "TAVILY_API_KEY is not configured"}
 
+        query = kwargs.get("query")
+        if not query:
+            return {"error": "Missing required parameter 'query'"}
+
         payload = {
-            "query": kwargs["query"],
+            "query": query,
             "search_depth": kwargs.get("search_depth", "basic"),
             "topic": kwargs.get("topic", "general"),
             "max_results": kwargs.get("max_results", 5),
