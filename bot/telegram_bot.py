@@ -838,6 +838,55 @@ class ChatGPTTelegramBot:
             logging.error(f'An error occurred while generating the result card for inline query {e}')
 
 
+    async def search_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Command handler for /search to explicitly perform a web search.
+        """
+        if not await self.check_allowed_and_within_budget(update, context):
+            return
+
+        query = ' '.join(context.args)
+        if not query:
+            await update.message.reply_text(
+                message_thread_id=get_thread_id(update),
+                text="请提供搜索关键词，例如：/search 今天的天气"
+            )
+            return
+
+        await update.effective_message.reply_chat_action(
+            action=constants.ChatAction.TYPING,
+            message_thread_id=get_thread_id(update)
+        )
+
+        plugin = self.plugin_manager.get_plugin('TavilySearchPlugin')
+        if not plugin:
+            await update.message.reply_text(
+                message_thread_id=get_thread_id(update),
+                text="未启用搜索功能（TavilySearchPlugin）"
+            )
+            return
+
+        try:
+            result = await plugin.execute("tavily_search", self.openai, query=query)
+            if "error" in result:
+                await update.message.reply_text(
+                    message_thread_id=get_thread_id(update),
+                    text=f"搜索失败: {result['error']}"
+                )
+            elif "direct_result" in result:
+                await handle_direct_result(self.config, update, result)
+            else:
+                await update.message.reply_text(
+                    message_thread_id=get_thread_id(update),
+                    text="搜索结果为空或格式不正确。"
+                )
+        except Exception as e:
+            logging.exception(e)
+            await update.message.reply_text(
+                message_thread_id=get_thread_id(update),
+                text=f"搜索过程发生错误: {str(e)}"
+            )
+
     async def model_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Command handler for /model to switch models.
@@ -1111,6 +1160,7 @@ class ChatGPTTelegramBot:
 
         application.add_handler(CommandHandler('reset', self.reset))
         application.add_handler(CommandHandler('help', self.help))
+        application.add_handler(CommandHandler('search', self.search_command))
         application.add_handler(CommandHandler('model', self.model_command))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('tts', self.tts))
