@@ -16,6 +16,7 @@ from plugins.whois_ import WhoisPlugin
 from plugins.webshot import WebshotPlugin
 from plugins.iplocation import IpLocationPlugin
 from plugins.tavily_search import TavilySearchPlugin
+from plugins.core_memory import CoreMemoryPlugin
 
 
 class PluginManager:
@@ -42,6 +43,7 @@ class PluginManager:
             'webshot': WebshotPlugin,
             'iplocation': IpLocationPlugin,
             'tavily_search': TavilySearchPlugin,
+            'core_memory': CoreMemoryPlugin,
         }
         self.plugins = [plugin_mapping[plugin]() for plugin in enabled_plugins if plugin in plugin_mapping]
 
@@ -62,7 +64,7 @@ class PluginManager:
             for spec in specs
         ]
 
-    async def call_function(self, function_name, helper, arguments):
+    async def call_function(self, function_name, helper, arguments, chat_id=None):
         """
         Call a function based on the name and parameters provided
         """
@@ -71,9 +73,17 @@ class PluginManager:
             return json.dumps({'error': f'Function {function_name} not found'})
         try:
             args_dict = json.loads(arguments) if arguments else {}
+            if chat_id is not None:
+                args_dict['chat_id'] = chat_id
         except Exception as e:
             return json.dumps({'error': f'Invalid function arguments JSON: {str(e)}'})
         return json.dumps(await plugin.execute(function_name, helper, **args_dict), default=str)
+
+    def get_plugin(self, name: str):
+        """
+        Return the plugin instance by its registered name or source name.
+        """
+        return next((plugin for plugin in self.plugins if type(plugin).__name__ == name or plugin.get_source_name() == name), None)
 
     def get_plugin_source_name(self, function_name) -> str:
         """

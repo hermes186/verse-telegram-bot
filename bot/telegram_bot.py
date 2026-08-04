@@ -6,7 +6,6 @@ import os
 import io
 
 from uuid import uuid4
-from telegram import BotCommandScopeAllGroupChats, Update, constants
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, InlineQueryResultArticle
 from telegram import InputTextMessageContent, BotCommand
 from telegram.error import RetryAfter, TimedOut, BadRequest
@@ -17,7 +16,6 @@ from pydub import AudioSegment
 from PIL import Image
 
 from utils import is_group_chat, get_thread_id, message_text, wrap_with_indicator, split_into_chunks, \
-    edit_message_with_retry, get_stream_cutoff_values, is_allowed, get_remaining_budget, is_admin, is_within_budget, \
     get_reply_to_message_id, add_chat_request_to_usage_tracker, error_handler, is_direct_result, handle_direct_result, \
     cleanup_intermediate_files
 from openai_helper import OpenAIHelper, localized_text
@@ -176,7 +174,6 @@ class ChatGPTTelegramBot:
             )
         # No longer works as of July 21st 2023, as OpenAI has removed the billing API
         # add OpenAI account information for admin request
-        # if is_admin(self.config, user_id):
         #     text_budget += (
         #         f"{localized_text('stats_openai', bot_language)}"
         #         f"{self.openai.get_billing_current_month():.2f}"
@@ -543,14 +540,14 @@ class ChatGPTTelegramBot:
                                 try:
                                     await edit_message_with_retry(context, chat_id, str(sent_message.message_id),
                                                                   stream_chunks[-2])
-                                except:
+                                except Exception:
                                     pass
                                 try:
                                     sent_message = await update.effective_message.reply_text(
                                         message_thread_id=get_thread_id(update),
                                         text=content if len(content) > 0 else "..."
                                     )
-                                except:
+                                except Exception:
                                     pass
                                 continue
 
@@ -567,7 +564,7 @@ class ChatGPTTelegramBot:
                                     reply_to_message_id=get_reply_to_message_id(self.config, update),
                                     text=content,
                                 )
-                            except:
+                            except Exception:
                                 continue
 
                         elif abs(len(content) - len(prev)) > cutoff or tokens != 'not_finished':
@@ -697,14 +694,14 @@ class ChatGPTTelegramBot:
                             try:
                                 await edit_message_with_retry(context, chat_id, str(sent_message.message_id),
                                                               stream_chunks[-2])
-                            except:
+                            except Exception:
                                 pass
                             try:
                                 sent_message = await update.effective_message.reply_text(
                                     message_thread_id=get_thread_id(update),
                                     text=content if len(content) > 0 else "..."
                                 )
-                            except:
+                            except Exception:
                                 pass
                             continue
 
@@ -721,7 +718,7 @@ class ChatGPTTelegramBot:
                                 reply_to_message_id=get_reply_to_message_id(self.config, update),
                                 text=content,
                             )
-                        except:
+                        except Exception:
                             continue
 
                     elif abs(len(content) - len(prev)) > cutoff or tokens != 'not_finished':
@@ -967,7 +964,7 @@ class ChatGPTTelegramBot:
                                                               message_id=inline_message_id,
                                                               text=f'{query}\n\n{answer_tr}:\n{content}',
                                                               is_inline=True)
-                            except:
+                            except Exception:
                                 continue
 
                         elif abs(len(content) - len(prev)) > cutoff or tokens != 'not_finished':

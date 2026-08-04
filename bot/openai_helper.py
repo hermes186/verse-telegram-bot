@@ -269,7 +269,7 @@ class OpenAIHelper:
                     self.__add_to_history(chat_id, role="user", content=query)
                 except Exception as e:
                     logging.warning(f'Error while summarising chat history: {str(e)}. Popping elements instead...')
-                    self.conversations[chat_id] = self.conversations[chat_id][-self.config['max_history_size']:]
+                    self.conversations[chat_id] = [self.conversations[chat_id][0]] + self.conversations[chat_id][-(self.config['max_history_size']-1):]
 
             chat_model = self.get_chat_model(chat_id)
             client = self.client
@@ -361,7 +361,7 @@ class OpenAIHelper:
             })
 
         logging.info(f'Calling function {function_name} with arguments {arguments}')
-        function_response = await self.plugin_manager.call_function(function_name, self, arguments)
+        function_response = await self.plugin_manager.call_function(function_name, self, arguments, chat_id=chat_id)
 
         if function_name not in plugins_used:
             plugins_used += (function_name,)
@@ -525,7 +525,7 @@ class OpenAIHelper:
                     self.conversations[chat_id] += [last]
                 except Exception as e:
                     logging.warning(f'Error while summarising chat history: {str(e)}. Popping elements instead...')
-                    self.conversations[chat_id] = self.conversations[chat_id][-self.config['max_history_size']:]
+                    self.conversations[chat_id] = [self.conversations[chat_id][0]] + self.conversations[chat_id][-(self.config['max_history_size']-1):]
 
             message = {'role':'user', 'content':content}
 
@@ -661,6 +661,13 @@ class OpenAIHelper:
         """
         if content == '':
             content = self.config['assistant_prompt']
+            
+            memory_plugin = self.plugin_manager.get_plugin('CoreMemory')
+            if memory_plugin:
+                user_memory = memory_plugin.get_user_memory(chat_id)
+                if user_memory:
+                    content += f"\n\n<User_Core_Memory>\n{user_memory}\n</User_Core_Memory>"
+
         chat_model = self.get_chat_model(chat_id)
         self.conversations[chat_id] = [{"role": "assistant" if chat_model in O_MODELS else "system", "content": content}]
         self.conversations_vision[chat_id] = False

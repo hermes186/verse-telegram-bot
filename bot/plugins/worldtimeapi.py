@@ -45,5 +45,5 @@ class WorldTimeApiPlugin(Plugin):
             time_24hr = wtr_obj.strftime("%H:%M:%S")
             time_12hr = wtr_obj.strftime("%I:%M:%S %p")
             return {"24hr": time_24hr, "12hr": time_12hr}
-        except:
+        except Exception:
             return {"result": "No result was found"}
