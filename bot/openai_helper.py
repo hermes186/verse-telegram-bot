@@ -116,6 +116,12 @@ class OpenAIHelper:
             kwargs['http_client'] = http_client
 
         self.client = openai.AsyncOpenAI(**kwargs)
+        
+        self.image_client = self.client
+        if config.get('image_api_key'):
+            image_kwargs = kwargs.copy()
+            image_kwargs['api_key'] = config['image_api_key']
+            self.image_client = openai.AsyncOpenAI(**image_kwargs)
 
         self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])
         self.user_models: dict[int, str] = {}  # {chat_id: model_name}
@@ -388,7 +394,7 @@ class OpenAIHelper:
         """
         bot_language = self.config['bot_language']
         try:
-            response = await self.client.images.generate(
+            response = await self.image_client.images.generate(
                 prompt=prompt,
                 n=1,
                 model=self.config['image_model'],

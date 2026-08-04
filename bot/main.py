@@ -44,6 +44,7 @@ def main():
         'models': models_list,
         'base_url': os.environ.get('OPENAI_BASE_URL', 'https://uuapi.net/v1'),
         'api_key': os.environ['OPENAI_API_KEY'],
+        'image_api_key': os.environ.get('IMAGE_API_KEY', None),
         'show_usage': os.environ.get('SHOW_USAGE', 'false').lower() == 'true',
         'stream': os.environ.get('STREAM', 'true').lower() == 'true',
         'proxy': os.environ.get('PROXY', None) or os.environ.get('OPENAI_PROXY', None),
