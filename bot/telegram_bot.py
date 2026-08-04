@@ -858,7 +858,7 @@ class ChatGPTTelegramBot:
             message_thread_id=get_thread_id(update)
         )
 
-        plugin = self.plugin_manager.get_plugin('TavilySearchPlugin')
+        plugin = self.openai.plugin_manager.get_plugin('TavilySearchPlugin')
         if not plugin:
             await update.message.reply_text(
                 message_thread_id=get_thread_id(update),

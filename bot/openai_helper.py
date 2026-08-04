@@ -385,7 +385,14 @@ class OpenAIHelper:
                                                 content=json.dumps({'result': 'Done, the content has been sent'
                                                                               'to the user.'}),
                                                 tool_call_id=tool_call_id)
+            # Add a closing assistant text message so the history ends cleanly.
+            # Without this, the history ends with a 'tool' role message, which can
+            # cause some models to keep calling tools on subsequent user messages,
+            # eventually returning empty content and silently dropping replies.
+            self.__add_to_history(chat_id, role='assistant',
+                                  content='[已完成，结果已发送给用户。]')
             return function_response, plugins_used
+
 
         self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name,
                                             content=function_response, tool_call_id=tool_call_id)
