@@ -5,3 +5,5 @@ __pycache__
 /usage_logs
 venv
 /.cache
+user_memories.json
+scratch/
