@@ -268,7 +268,7 @@ class OpenAIHelper:
 
             # Summarize the chat history if it's too long to avoid excessive token usage
             token_count = self.__count_tokens(self.conversations[chat_id], chat_id=chat_id)
-            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.__max_model_tokens(chat_id=chat_id)
+            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.get_max_model_tokens(chat_id=chat_id)
             exceeded_max_history_size = len(self.conversations[chat_id]) > self.config['max_history_size']
 
             if exceeded_max_tokens or exceeded_max_history_size:
@@ -531,7 +531,7 @@ class OpenAIHelper:
 
             # Summarize the chat history if it's too long to avoid excessive token usage
             token_count = self.__count_tokens(self.conversations[chat_id])
-            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.__max_model_tokens()
+            exceeded_max_tokens = token_count + self.config['max_tokens'] > self.get_max_model_tokens()
             exceeded_max_history_size = len(self.conversations[chat_id]) > self.config['max_history_size']
 
             if exceeded_max_tokens or exceeded_max_history_size:
@@ -744,7 +744,7 @@ class OpenAIHelper:
         )
         return response.choices[0].message.content
 
-    def __max_model_tokens(self, chat_id=None):
+    def get_max_model_tokens(self, chat_id=None):
         base = 4096
         model = self.get_chat_model(chat_id) if chat_id else self.config['model']
         if model in GPT_3_MODELS:

@@ -2,10 +2,10 @@ import os
 import logging
 from typing import Optional
 
-def parse_document(file_path: str, filename: str) -> Optional[str]:
+def parse_document(file_path: str, filename: str, max_chars: int = 50000) -> Optional[str]:
     """
     Parses a document based on its extension and extracts text.
-    Returns the extracted text, truncated to 50,000 characters if it exceeds it.
+    Returns the extracted text, truncated to max_chars if it exceeds it.
     Supported extensions: .pdf, .docx, .xlsx, .pptx, .txt
     """
     _, ext = os.path.splitext(filename.lower())
@@ -53,10 +53,9 @@ def parse_document(file_path: str, filename: str) -> Optional[str]:
         else:
             return None
             
-        # Hard truncate to 50,000 characters
-        MAX_CHARS = 50000
-        if len(text) > MAX_CHARS:
-            text = text[:MAX_CHARS] + "\n\n[文件后续内容由于长度限制已被截断]"
+        # Hard truncate to max_chars characters
+        if len(text) > max_chars:
+            text = text[:max_chars] + "\n\n[文件后续内容由于长度限制已被截断]"
             
         return text.strip()
         

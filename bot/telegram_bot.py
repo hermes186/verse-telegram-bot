@@ -666,7 +666,13 @@ class ChatGPTTelegramBot:
                     local_path = os.path.join("scratch", f"{uuid4()}_{file_name}")
                     await file_obj.download_to_drive(local_path)
                     
-                    extracted_text = parse_document(local_path, file_name)
+                    # Calculate dynamic max chars based on model context size to avoid blowing up the API
+                    # Reserve 1000 tokens for the user prompt and system messages
+                    max_allowed_tokens = self.openai.get_max_model_tokens(chat_id) - self.config.get('max_tokens', 1000) - 1000
+                    # Rough estimation: assume 1 token = 2 chars for safety. 
+                    max_chars = max(5000, max_allowed_tokens * 2) 
+                    
+                    extracted_text = parse_document(local_path, file_name, max_chars)
                     
                     if os.path.exists(local_path):
                         os.remove(local_path)
