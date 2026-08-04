@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import os
 from typing import Dict
 
@@ -131,11 +133,18 @@ class TavilySearchPlugin(Plugin):
             headers["X-Project-ID"] = os.getenv('TAVILY_PROJECT_ID')
 
         try:
-            response = requests.post(
-                f"{self.base_url.rstrip('/')}/search",
-                json=payload,
-                headers=headers,
-                timeout=30,
+            # Run the synchronous HTTP call in a thread pool to avoid blocking
+            # the asyncio event loop (which would freeze all other message handling).
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                functools.partial(
+                    requests.post,
+                    f"{self.base_url.rstrip('/')}/search",
+                    json=payload,
+                    headers=headers,
+                    timeout=30,
+                )
             )
             response.raise_for_status()
             data = response.json()

@@ -353,10 +353,16 @@ async def handle_direct_result(config, update: Update, response: any):
         elif format == 'path':
             await update.effective_message.reply_photo(**common_args, photo=open(value, 'rb'))
     elif kind == 'text':
-        if format == 'markdown':
-            await update.effective_message.reply_text(**common_args, text=value, parse_mode=constants.ParseMode.MARKDOWN)
-        else:
-            await update.effective_message.reply_text(**common_args, text=value)
+        chunks = split_into_chunks(value)
+        for chunk in chunks:
+            if format == 'markdown':
+                await update.effective_message.reply_text(**common_args, text=chunk,
+                                                          parse_mode=constants.ParseMode.MARKDOWN)
+            else:
+                await update.effective_message.reply_text(**common_args, text=chunk)
+            # Only the first chunk should quote the original message
+            common_args.pop('reply_to_message_id', None)
+
     elif kind == 'gif' or kind == 'file':
         if format == 'url':
             await update.effective_message.reply_document(**common_args, document=value)
