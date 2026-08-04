@@ -246,8 +246,8 @@ class OpenAIHelper:
 
     @retry(
         reraise=True,
-        retry=retry_if_exception_type(openai.RateLimitError),
-        wait=wait_fixed(20),
+        retry=retry_if_exception_type((openai.RateLimitError, openai.InternalServerError, openai.APIConnectionError, openai.APITimeoutError)),
+        wait=wait_fixed(3),
         stop=stop_after_attempt(3)
     )
     async def __common_get_chat_response(self, chat_id: int, query: str, stream=False):
@@ -315,7 +315,7 @@ class OpenAIHelper:
                     return await client.chat.completions.create(**common_args)
                 raise e
 
-        except openai.RateLimitError as e:
+        except (openai.RateLimitError, openai.InternalServerError, openai.APIConnectionError, openai.APITimeoutError) as e:
             raise e
 
         except openai.BadRequestError as e:
@@ -501,8 +501,8 @@ class OpenAIHelper:
 
     @retry(
         reraise=True,
-        retry=retry_if_exception_type(openai.RateLimitError),
-        wait=wait_fixed(20),
+        retry=retry_if_exception_type((openai.RateLimitError, openai.InternalServerError, openai.APIConnectionError, openai.APITimeoutError)),
+        wait=wait_fixed(3),
         stop=stop_after_attempt(3)
     )
     async def __common_get_chat_response_vision(self, chat_id: int, content: list, stream=False):
@@ -572,7 +572,7 @@ class OpenAIHelper:
             client = self.client
             return await client.chat.completions.create(**common_args)
 
-        except openai.RateLimitError as e:
+        except (openai.RateLimitError, openai.InternalServerError, openai.APIConnectionError, openai.APITimeoutError) as e:
             raise e
 
         except openai.BadRequestError as e:
