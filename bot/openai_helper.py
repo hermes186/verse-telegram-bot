@@ -134,6 +134,18 @@ class OpenAIHelper:
     def get_models(self) -> list[str]:
         return self.models
 
+    @staticmethod
+    async def __prepend_stream_item(item, gen):
+        """
+        Yield a previously-consumed stream chunk followed by the remaining generator.
+        This is needed because async generators cannot be 'unread' — when
+        __handle_function_call consumes an item to check if it's a tool call and
+        finds it's regular text, we must re-emit that item to avoid losing content.
+        """
+        yield item
+        async for chunk in gen:
+            yield chunk
+
     def get_chat_model(self, chat_id: int) -> str:
         return self.user_models.get(chat_id, self.config.get('model', 'gpt-4o'))
 
@@ -331,9 +343,11 @@ class OpenAIHelper:
                     elif first_choice.finish_reason and first_choice.finish_reason == 'tool_calls':
                         break
                     else:
-                        return response, plugins_used
+                        # Not a tool call — prepend the consumed chunk back so no content is lost
+                        return self.__prepend_stream_item(item, response), plugins_used
                 else:
-                    return response, plugins_used
+                    return self.__prepend_stream_item(item, response), plugins_used
+
         else:
             if len(response.choices) > 0:
                 first_choice = response.choices[0]
