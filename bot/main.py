@@ -42,7 +42,7 @@ def main():
 
     openai_config = {
         'models': models_list,
-        'base_url': os.environ.get('OPENAI_BASE_URL', 'https://openrouter.ai/api/v1'),
+        'base_url': os.environ.get('OPENAI_BASE_URL', 'https://uuapi.net/v1'),
         'api_key': os.environ['OPENAI_API_KEY'],
         'show_usage': os.environ.get('SHOW_USAGE', 'false').lower() == 'true',
         'stream': os.environ.get('STREAM', 'true').lower() == 'true',
