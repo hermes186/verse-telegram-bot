@@ -1,7 +1,5 @@
 import json
 
-from plugins.gtts_text_to_speech import GTTSTextToSpeech
-from plugins.auto_tts import AutoTextToSpeech
 from plugins.dice import DicePlugin
 from plugins.youtube_audio_extractor import YouTubeAudioExtractorPlugin
 from plugins.ddg_image_search import DDGImageSearchPlugin
@@ -37,8 +35,6 @@ class PluginManager:
             'youtube_audio_extractor': YouTubeAudioExtractorPlugin,
             'dice': DicePlugin,
             'deepl_translate': DeeplTranslatePlugin,
-            'gtts_text_to_speech': GTTSTextToSpeech,
-            'auto_tts': AutoTextToSpeech,
             'whois': WhoisPlugin,
             'webshot': WebshotPlugin,
             'iplocation': IpLocationPlugin,
