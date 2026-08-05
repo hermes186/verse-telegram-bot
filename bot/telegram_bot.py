@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import io
+import json
 
 from uuid import uuid4
 from telegram import BotCommandScopeAllGroupChats, Update, constants
@@ -684,6 +685,9 @@ class ChatGPTTelegramBot:
                 except Exception as e:
                     logging.error(f"Error handling document: {e}")
                     
+        if not prompt:
+            return
+
         self.last_message[chat_id] = prompt
 
         if is_group_chat(update):
@@ -918,7 +922,7 @@ class ChatGPTTelegramBot:
 
             synth_prompt = (
                 f"用户使用 /search 命令请求搜索：{query}\n\n"
-                f"互联网实时检索到的相关结果如下：\n{result}\n\n"
+                f"互联网实时检索到的相关结果如下：\n{json.dumps(result, ensure_ascii=False, indent=2) if isinstance(result, dict) else result}\n\n"
                 f"请结合上述检索结果，针对用户的问题进行整合、总结并回答。\n"
                 f"要求：\n"
                 f"1. 仔细梳理信息，给出连贯、有逻辑且条理清晰的回答，不要机械罗列或一股脑抛出原始数据。\n"
@@ -1226,7 +1230,7 @@ class ChatGPTTelegramBot:
             filters.AUDIO | filters.VOICE | filters.Document.AUDIO |
             filters.VIDEO | filters.VIDEO_NOTE | filters.Document.VIDEO,
             self.transcribe))
-        application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.prompt))
+        application.add_handler(MessageHandler((filters.TEXT | filters.Document.ALL) & (~filters.COMMAND), self.prompt))
         application.add_handler(InlineQueryHandler(self.inline_query, chat_types=[
             constants.ChatType.GROUP, constants.ChatType.SUPERGROUP, constants.ChatType.PRIVATE
         ]))

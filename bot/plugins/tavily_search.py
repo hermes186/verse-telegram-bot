@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import os
+import json
 from typing import Dict
 
 import requests
@@ -110,7 +111,7 @@ class TavilySearchPlugin(Plugin):
             "query": query,
             "search_depth": kwargs.get("search_depth", "basic"),
             "topic": kwargs.get("topic", "general"),
-            "max_results": kwargs.get("max_results", 5),
+            "max_results": kwargs.get("max_results", 10),
             "include_answer": kwargs.get("include_answer", True),
             "include_raw_content": kwargs.get("include_raw_content", False),
             "include_images": kwargs.get("include_images", False),
@@ -171,7 +172,7 @@ class TavilySearchPlugin(Plugin):
             if data.get("usage"):
                 output["usage"] = data["usage"]
 
-            return json.dumps(output, ensure_ascii=False)
+            return output
         except requests.HTTPError:
             try:
                 detail = response.json()
