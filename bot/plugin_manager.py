@@ -15,6 +15,7 @@ from plugins.webshot import WebshotPlugin
 from plugins.iplocation import IpLocationPlugin
 from plugins.tavily_search import TavilySearchPlugin
 from plugins.core_memory import CoreMemoryPlugin
+from plugins.web_image_embed import WebImageEmbedPlugin
 
 
 class PluginManager:
@@ -40,6 +41,7 @@ class PluginManager:
             'iplocation': IpLocationPlugin,
             'tavily_search': TavilySearchPlugin,
             'core_memory': CoreMemoryPlugin,
+            'web_image_embed': WebImageEmbedPlugin,
         }
         self.plugins = [plugin_mapping[plugin]() for plugin in enabled_plugins if plugin in plugin_mapping]
 
