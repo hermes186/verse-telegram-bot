@@ -936,7 +936,8 @@ class ChatGPTTelegramBot:
             )
 
             # Delegate synthesis to prompt handler
-            update.message.text = synth_prompt
+            with update.message._unfrozen() as message:
+                message.text = synth_prompt
             await self.prompt(update, context)
 
         except Exception as e:

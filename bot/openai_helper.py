@@ -215,34 +215,98 @@ class OpenAIHelper:
         """
         plugins_used = ()
         response = await self.__common_get_chat_response(chat_id, query, stream=True)
-        if self.config['enable_functions'] and not self.conversations_vision[chat_id]:
-            response, plugins_used = await self.__handle_function_call(chat_id, response, stream=True)
-            if is_direct_result(response):
-                yield response, '0'
-                return
-
+        
         answer = ''
-        async for chunk in response:
-            if len(chunk.choices) == 0:
-                continue
-            delta = chunk.choices[0].delta
-            if delta.content:
-                answer += delta.content
-                yield answer, 'not_finished'
-        answer = answer.strip()
-        self.__add_to_history(chat_id, role="assistant", content=answer)
-        tokens_used = str(self.__count_tokens(self.conversations[chat_id]))
-
-        show_plugins_used = len(plugins_used) > 0 and self.config['show_plugins_used']
-        plugin_names = tuple(self.plugin_manager.get_plugin_source_name(plugin) for plugin in plugins_used)
-        if self.config['show_usage']:
-            answer += f"\n\n---\n💰 {tokens_used} {localized_text('stats_tokens', self.config['bot_language'])}"
-            if show_plugins_used:
-                answer += f"\n🔌 {', '.join(plugin_names)}"
-        elif show_plugins_used:
-            answer += f"\n\n---\n🔌 {', '.join(plugin_names)}"
-
-        yield answer, tokens_used
+        times = 0
+        enable_functions = self.config['enable_functions'] and not self.conversations_vision[chat_id]
+        
+        while True:
+            function_name = ''
+            arguments = ''
+            tool_call_id = None
+            assistant_content = ''
+            finished_reason = None
+            
+            async for chunk in response:
+                if len(chunk.choices) == 0:
+                    continue
+                first_choice = chunk.choices[0]
+                delta = first_choice.delta
+                
+                if delta:
+                    if delta.content:
+                        assistant_content += delta.content
+                        answer += delta.content
+                        yield answer, 'not_finished'
+                        
+                    if enable_functions and delta.tool_calls:
+                        tc = delta.tool_calls[0]
+                        if tc.id:
+                            tool_call_id = tc.id
+                        if tc.function and tc.function.name:
+                            function_name += tc.function.name
+                        if tc.function and tc.function.arguments:
+                            arguments += tc.function.arguments
+                
+                if first_choice.finish_reason:
+                    finished_reason = first_choice.finish_reason
+                    break
+                    
+            if enable_functions and (finished_reason == 'tool_calls' or tool_call_id):
+                self.conversations[chat_id].append({
+                    'role': 'assistant',
+                    'content': assistant_content if assistant_content else None,
+                    'tool_calls': [{
+                        'id': tool_call_id,
+                        'type': 'function',
+                        'function': {'name': function_name, 'arguments': arguments}
+                    }]
+                })
+                
+                logging.info(f'Calling function {function_name} with arguments {arguments}')
+                function_response = await self.plugin_manager.call_function(function_name, self, arguments, chat_id=chat_id)
+                
+                if function_name not in plugins_used:
+                    plugins_used = plugins_used + (function_name,)
+                    
+                if is_direct_result(function_response):
+                    self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name,
+                                                        content=json.dumps({'result': 'Done, the content has been sent to the user.'}),
+                                                        tool_call_id=tool_call_id)
+                    self.__add_to_history(chat_id, role='assistant', content='[已完成，已发送给用户]')
+                    if not answer:
+                        yield function_response, '0'
+                    return
+                
+                self.__add_function_call_to_history(chat_id=chat_id, function_name=function_name,
+                                                    content=function_response, tool_call_id=tool_call_id)
+                
+                times += 1
+                chat_model = self.get_chat_model(chat_id)
+                response = await self.client.chat.completions.create(
+                    model=chat_model,
+                    messages=self.conversations[chat_id],
+                    tools=self.plugin_manager.get_tools_specs(),
+                    tool_choice='auto' if times < self.config.get('functions_max_consecutive_calls', 3) else 'none',
+                    stream=True
+                )
+            else:
+                if assistant_content:
+                    self.__add_to_history(chat_id, role="assistant", content=assistant_content.strip())
+                
+                tokens_used = str(self.__count_tokens(self.conversations[chat_id]))
+                show_plugins_used = len(plugins_used) > 0 and self.config['show_plugins_used']
+                plugin_names = tuple(self.plugin_manager.get_plugin_source_name(plugin) for plugin in plugins_used)
+                
+                if self.config['show_usage']:
+                    answer += f"\n\n---\n📊 {tokens_used} {localized_text('stats_tokens', self.config['bot_language'])}"
+                    if show_plugins_used:
+                        answer += f"\n🔌 {', '.join(plugin_names)}"
+                elif show_plugins_used:
+                    answer += f"\n\n---\n🔌 {', '.join(plugin_names)}"
+                    
+                yield answer.strip(), tokens_used
+                break
 
     @retry(
         reraise=True,
