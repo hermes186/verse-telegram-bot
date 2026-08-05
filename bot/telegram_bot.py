@@ -909,18 +909,26 @@ class ChatGPTTelegramBot:
 
         try:
             result = await plugin.execute("tavily_search", self.openai, query=query)
-            if "error" in result:
+            if isinstance(result, dict) and "error" in result:
                 await update.message.reply_text(
                     message_thread_id=get_thread_id(update),
                     text=f"搜索失败: {result['error']}"
                 )
-            elif "direct_result" in result:
-                await handle_direct_result(self.config, update, result)
-            else:
-                await update.message.reply_text(
-                    message_thread_id=get_thread_id(update),
-                    text="搜索结果为空或格式不正确。"
-                )
+                return
+
+            synth_prompt = (
+                f"用户使用 /search 命令请求搜索：{query}\n\n"
+                f"互联网实时检索到的相关结果如下：\n{result}\n\n"
+                f"请结合上述检索结果，针对用户的问题进行整合、总结并回答。\n"
+                f"要求：\n"
+                f"1. 仔细梳理信息，给出连贯、有逻辑且条理清晰的回答，不要机械罗列或一股脑抛出原始数据。\n"
+                f"2. 在回答的最后附上参考来源，格式为：\n📌 **参考来源：**\n1. [文章标题](URL)\n2. [文章标题](URL)"
+            )
+
+            # Delegate synthesis to prompt handler
+            update.message.text = synth_prompt
+            await self.prompt(update, context)
+
         except Exception as e:
             logging.exception(e)
             await update.message.reply_text(

@@ -25,7 +25,7 @@ class TavilySearchPlugin(Plugin):
     def get_spec(self) -> [Dict]:
         return [{
             "name": "tavily_search",
-            "description": "Search the web with Tavily and return ranked results with optional AI answer.",
+            "description": "Search the web with Tavily to retrieve up-to-date real-time facts, news, and information. Synthesize the retrieved search results to answer the user's question clearly, and list reference source links at the end.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -171,13 +171,7 @@ class TavilySearchPlugin(Plugin):
             if data.get("usage"):
                 output["usage"] = data["usage"]
 
-            return {
-                "direct_result": {
-                    "kind": "text",
-                    "format": "plain",
-                    "value": self.format_response(output),
-                }
-            }
+            return json.dumps(output, ensure_ascii=False)
         except requests.HTTPError:
             try:
                 detail = response.json()
