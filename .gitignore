@@ -17,6 +17,8 @@ scratch/
 scratch/
 tests/
 test_*.py
+scratch_*.py
+*.docx
 *.json
 !translations.json
 mem0_db/
