@@ -682,6 +682,12 @@ class ChatGPTTelegramBot:
                         if not prompt:
                             prompt = "请提取并总结这份文档的主要内容"
                         prompt = f"{prompt}\n\n[附带文档内容开始: {file_name}]\n{extracted_text}\n[附带文档内容结束]"
+                    else:
+                        await update.effective_message.reply_text(
+                            "无法从文件中提取到任何文本内容（文件可能为空、仅包含图片，或格式不受支持）。",
+                            message_thread_id=get_thread_id(update)
+                        )
+                        return
                 except Exception as e:
                     logging.error(f"Error handling document: {e}")
                     
@@ -1024,6 +1030,7 @@ class ChatGPTTelegramBot:
 
         try:
             if callback_data.startswith(callback_data_suffix):
+                await update.callback_query.answer()
                 unique_id = callback_data.split(':')[1]
                 total_tokens = 0
 

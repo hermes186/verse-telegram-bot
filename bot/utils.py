@@ -100,6 +100,7 @@ async def wrap_with_indicator(update: Update, context: CallbackContext, coroutin
             await asyncio.wait_for(asyncio.shield(task), 4.5)
         except asyncio.TimeoutError:
             pass
+    return await task
 
 
 async def edit_message_with_retry(context: ContextTypes.DEFAULT_TYPE, chat_id: int | None,

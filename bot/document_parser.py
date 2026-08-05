@@ -30,6 +30,11 @@ def parse_document(file_path: str, filename: str, max_chars: int = 50000) -> Opt
             doc = docx.Document(file_path)
             for para in doc.paragraphs:
                 text += para.text + "\n"
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        text += cell.text + "\t"
+                    text += "\n"
                 
         elif ext == '.xlsx':
             import openpyxl
@@ -50,6 +55,11 @@ def parse_document(file_path: str, filename: str, max_chars: int = 50000) -> Opt
                 for shape in slide.shapes:
                     if hasattr(shape, "text"):
                         text += shape.text + "\n"
+                    if shape.has_table:
+                        for row in shape.table.rows:
+                            for cell in row.cells:
+                                text += cell.text + "\t"
+                            text += "\n"
         else:
             return None
             
