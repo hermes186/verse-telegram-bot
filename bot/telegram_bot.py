@@ -24,6 +24,7 @@ from utils import is_group_chat, get_thread_id, message_text, wrap_with_indicato
 from openai_helper import OpenAIHelper, localized_text
 from usage_tracker import UsageTracker
 from document_parser import parse_document
+from video_helper import VideoIntelligenceHelper
 
 
 class ChatGPTTelegramBot:
@@ -39,6 +40,7 @@ class ChatGPTTelegramBot:
         """
         self.config = config
         self.openai = openai
+        self.video_helper = VideoIntelligenceHelper()
         bot_language = self.config['bot_language']
         self.commands = [
             BotCommand(command='help', description=localized_text('help_description', bot_language)),
@@ -350,6 +352,9 @@ class ChatGPTTelegramBot:
         async def _execute():
             filename_mp3 = f'{filename}.mp3'
             bot_language = self.config['bot_language']
+            
+            is_video = bool(update.message.video or update.message.video_note or (update.message.document and update.message.document.mime_type and update.message.document.mime_type.startswith('video')))
+            
             try:
                 media_file = await context.bot.get_file(update.message.effective_attachment.file_id)
                 await media_file.download_to_drive(filename)
@@ -364,6 +369,48 @@ class ChatGPTTelegramBot:
                     ),
                     parse_mode=constants.ParseMode.MARKDOWN
                 )
+                return
+
+            if is_video and self.video_helper.is_enabled():
+                user_id = update.message.from_user.id
+                if user_id not in self.usage:
+                    self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
+                
+                try:
+                    with open(filename, 'rb') as f:
+                        video_bytes = f.read()
+                    
+                    logging.info(f"Analyzing video for user {user_id}")
+                    
+                    msg = await update.effective_message.reply_text(
+                        message_thread_id=get_thread_id(update),
+                        text="⏳ Analyzing video using Google Cloud Video Intelligence...",
+                        reply_to_message_id=get_reply_to_message_id(self.config, update)
+                    )
+                    
+                    video_summary = await asyncio.to_thread(self.video_helper.annotate_video_file, video_bytes)
+                    
+                    caption = update.message.caption or "Please describe this video."
+                    prompt = f"The user has uploaded a video. Here is the video intelligence analysis:\n\n{video_summary}\n\nUser's prompt: {caption}"
+                    
+                    response, total_tokens = await self.openai.get_chat_response(chat_id=chat_id, query=prompt)
+                    
+                    self.usage[user_id].add_chat_tokens(total_tokens, self.config['token_price'])
+                    allowed_user_ids = self.config['allowed_user_ids'].split(',')
+                    if str(user_id) not in allowed_user_ids and 'guests' in self.usage:
+                        self.usage["guests"].add_chat_tokens(total_tokens, self.config['token_price'])
+                        
+                    await msg.edit_text(response, parse_mode=constants.ParseMode.MARKDOWN)
+                except Exception as e:
+                    logging.exception(e)
+                    await update.effective_message.reply_text(
+                        message_thread_id=get_thread_id(update),
+                        reply_to_message_id=get_reply_to_message_id(self.config, update),
+                        text=f"Failed to analyze video: {str(e)}"
+                    )
+                finally:
+                    if os.path.exists(filename):
+                        os.remove(filename)
                 return
 
             try:

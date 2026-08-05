@@ -17,3 +17,6 @@ scratch/
 scratch/
 tests/
 test_*.py
+*.json
+!translations.json
+mem0_db/
