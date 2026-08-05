@@ -747,7 +747,7 @@ class OpenAIHelper:
         if content == '':
             content = self.config['assistant_prompt']
             
-            memory_plugin = self.plugin_manager.get_plugin('CoreMemory')
+            memory_plugin = self.plugin_manager.get_plugin('Mem0Memory')
             if memory_plugin:
                 user_memory = memory_plugin.get_user_memory(chat_id)
                 if user_memory:
