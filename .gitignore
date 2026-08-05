@@ -2,6 +2,10 @@ __pycache__
 /.idea
 .env
 .DS_Store
+__pycache__
+/.idea
+.env
+.DS_Store
 /usage_logs
 venv
 /.cache
@@ -11,3 +15,5 @@ scratch/
 # Antigravity and Agent Artifacts
 .learnings/
 scratch/
+tests/
+test_*.py
