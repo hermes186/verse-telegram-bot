@@ -123,6 +123,14 @@ class OpenAIHelper:
             image_kwargs['api_key'] = config['image_api_key']
             self.image_client = openai.AsyncOpenAI(**image_kwargs)
 
+        self.audio_client = self.client
+        if config.get('audio_api_key') != kwargs['api_key'] or config.get('audio_base_url') != kwargs.get('base_url'):
+            audio_kwargs = kwargs.copy()
+            audio_kwargs['api_key'] = config['audio_api_key']
+            if config.get('audio_base_url'):
+                audio_kwargs['base_url'] = config['audio_base_url']
+            self.audio_client = openai.AsyncOpenAI(**audio_kwargs)
+
         self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])
         self.user_models: dict[int, str] = {}  # {chat_id: model_name}
 
@@ -536,7 +544,7 @@ class OpenAIHelper:
         """
         bot_language = self.config['bot_language']
         try:
-            response = await self.client.audio.speech.create(
+            response = await self.audio_client.audio.speech.create(
                 model=self.config['tts_model'],
                 voice=self.config['tts_voice'],
                 input=text,
@@ -557,7 +565,8 @@ class OpenAIHelper:
         try:
             with open(filename, "rb") as audio:
                 prompt_text = self.config['whisper_prompt']
-                result = await self.client.audio.transcriptions.create(model="whisper-1", file=audio, prompt=prompt_text)
+                audio_model = self.config.get('audio_model', 'whisper-1')
+                result = await self.audio_client.audio.transcriptions.create(model=audio_model, file=audio, prompt=prompt_text)
                 return result.text
         except Exception as e:
             logging.exception(e)

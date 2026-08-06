@@ -3,7 +3,11 @@ import json
 import logging
 from typing import Dict, List
 
-from mem0 import Memory
+try:
+    from mem0 import Memory
+except ImportError:
+    Memory = None
+
 from .plugin import Plugin
 
 class Mem0MemoryPlugin(Plugin):

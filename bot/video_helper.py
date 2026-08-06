@@ -8,6 +8,9 @@ class VideoIntelligenceHelper:
     def __init__(self):
         self.enabled = os.getenv("ENABLE_VIDEO_INTELLIGENCE", "false").lower() == "true"
         self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if self.credentials_path and not os.path.isabs(self.credentials_path):
+            # Resolve relative to the root project directory (one level up from bot/)
+            self.credentials_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), self.credentials_path)
         self.client = None
         
         if self.enabled:
@@ -42,9 +45,13 @@ class VideoIntelligenceHelper:
                 videointelligence.Feature.SPEECH_TRANSCRIPTION,
             ]
 
+            # Use bot language to determine transcription language
+            bot_lang = os.getenv("BOT_LANGUAGE", "en").lower()
+            lang_code = "cmn-Hans-CN" if bot_lang.startswith("zh") else "en-US"
+
             video_context = videointelligence.VideoContext(
                 speech_transcription_config=videointelligence.SpeechTranscriptionConfig(
-                    language_code="en-US",
+                    language_code=lang_code,
                     enable_automatic_punctuation=True,
                 )
             )

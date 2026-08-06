@@ -371,7 +371,17 @@ class ChatGPTTelegramBot:
                 )
                 return
 
-            if is_video and self.video_helper.is_enabled():
+            if is_video:
+                if not self.video_helper.is_enabled():
+                    await update.effective_message.reply_text(
+                        message_thread_id=get_thread_id(update),
+                        reply_to_message_id=get_reply_to_message_id(self.config, update),
+                        text="视频分析功能未启用，请在配置中检查 Google Cloud Video Intelligence 设置。"
+                    )
+                    if os.path.exists(filename):
+                        os.remove(filename)
+                    return
+
                 user_id = update.message.from_user.id
                 if user_id not in self.usage:
                     self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
