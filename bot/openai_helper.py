@@ -124,11 +124,14 @@ class OpenAIHelper:
             self.image_client = openai.AsyncOpenAI(**image_kwargs)
 
         self.audio_client = self.client
-        if config.get('audio_api_key') != kwargs['api_key'] or config.get('audio_base_url') != kwargs.get('base_url'):
+        # Use separate audio client only if explicit audio config differs
+        audio_api_key = config.get('audio_api_key', config.get('api_key'))
+        audio_base_url = config.get('audio_base_url', config.get('base_url'))
+        if audio_api_key != kwargs['api_key'] or audio_base_url != kwargs.get('base_url'):
             audio_kwargs = kwargs.copy()
-            audio_kwargs['api_key'] = config['audio_api_key']
-            if config.get('audio_base_url'):
-                audio_kwargs['base_url'] = config['audio_base_url']
+            audio_kwargs['api_key'] = audio_api_key
+            if audio_base_url:
+                audio_kwargs['base_url'] = audio_base_url
             self.audio_client = openai.AsyncOpenAI(**audio_kwargs)
 
         self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])

@@ -356,8 +356,8 @@ class ChatGPTTelegramBot:
             is_video = bool(update.message.video or update.message.video_note or (update.message.document and update.message.document.mime_type and update.message.document.mime_type.startswith('video')))
             
             try:
-                media_file = await context.bot.get_file(update.message.effective_attachment.file_id)
-                await media_file.download_to_drive(filename)
+                media_file = await context.bot.get_file(update.message.effective_attachment.file_id, read_timeout=300)
+                await media_file.download_to_drive(filename, read_timeout=300)
             except Exception as e:
                 logging.exception(e)
                 await update.effective_message.reply_text(
@@ -719,10 +719,10 @@ class ChatGPTTelegramBot:
                     message_thread_id=get_thread_id(update)
                 )
                 try:
-                    file_obj = await context.bot.get_file(file_id)
+                    file_obj = await context.bot.get_file(file_id, read_timeout=300)
                     os.makedirs("scratch", exist_ok=True)
                     local_path = os.path.join("scratch", f"{uuid4()}_{file_name}")
-                    await file_obj.download_to_drive(local_path)
+                    await file_obj.download_to_drive(local_path, read_timeout=300)
                     
                     # Calculate dynamic max chars based on model context size to avoid blowing up the API
                     # Reserve 1000 tokens for the user prompt and system messages
