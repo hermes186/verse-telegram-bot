@@ -7,20 +7,15 @@ logger = logging.getLogger(__name__)
 class VideoIntelligenceHelper:
     def __init__(self):
         self.enabled = os.getenv("ENABLE_VIDEO_INTELLIGENCE", "false").lower() == "true"
-        self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         self.client = None
         
         if self.enabled:
-            if not self.credentials_path or not os.path.exists(self.credentials_path):
-                logger.warning(f"Video intelligence is enabled but credentials file not found at {self.credentials_path}")
+            try:
+                self.client = videointelligence.VideoIntelligenceServiceClient()
+                logger.info("Successfully initialized VideoIntelligenceServiceClient")
+            except Exception as e:
+                logger.error(f"Failed to initialize VideoIntelligenceServiceClient: {e}")
                 self.enabled = False
-            else:
-                try:
-                    self.client = videointelligence.VideoIntelligenceServiceClient()
-                    logger.info("Successfully initialized VideoIntelligenceServiceClient")
-                except Exception as e:
-                    logger.error(f"Failed to initialize VideoIntelligenceServiceClient: {e}")
-                    self.enabled = False
 
     def is_enabled(self):
         return self.enabled
