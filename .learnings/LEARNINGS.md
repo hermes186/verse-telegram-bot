@@ -29,3 +29,31 @@ Corrections, insights, and knowledge gaps captured during development.
 - Related Files: N/A
 - Tags: communication_style, objectivity, user_feedback
 ---
+
+## [LRN-20260805-002] correction
+
+**Logged**: 2026-08-05T22:21:00+08:00
+**Priority**: critical
+**Status**: pending
+**Area**: infra
+
+### Summary
+严禁使用 `git add .` 盲目提交。提交代码前必须逐一指定目标文件，严禁将临时测试文件（如 `.docx`、测试脚本、日志、密钥等）推送至 Git 仓库。
+
+### Details
+在收到用户“推送”指令时，Agent 偷懒执行了 `git add .`，导致根目录下在测试过程中生成的临时文件 `test.docx`、`test_table.docx` 和 `scratch_test_503.py` 被一并暂存并提交推送至 GitHub 远程仓库，违背了用户多次强调的“不要推送测试文件”的明确指令。
+根本原因是：
+1. 偷懒使用了全量暂存命令 `git add .` 而没有逐个显式指定待提交文件。
+2. 在测试产生临时文件时没有第一时间清理或加入 `.gitignore`。
+
+### Suggested Action
+1. 提交代码时，**绝对禁止使用 `git add .`**，必须明确指定被修改的代码文件路径（如 `git add bot/telegram_bot.py requirements.txt`）。
+2. 执行 `git commit` 前必须运行 `git status` 审查暂存区中的文件列表。
+3. 任何测试或调试产生的临时文件，测试完毕必须立即清理，或第一时间写入 `.gitignore`。
+
+### Metadata
+- Source: user_feedback
+- Related Files: .gitignore, bot/telegram_bot.py, requirements.txt
+- Tags: git_workflow, strict_staging, discipline
+---
+

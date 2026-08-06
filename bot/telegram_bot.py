@@ -435,12 +435,7 @@ class ChatGPTTelegramBot:
                 self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
 
             try:
-                if self.video_helper.is_enabled():
-                    transcript = await asyncio.to_thread(self.video_helper.transcribe_audio_file, filename_mp3)
-                    if not transcript.strip():
-                        transcript = "(No speech detected)"
-                else:
-                    transcript = await self.openai.transcribe(filename_mp3)
+                transcript = await self.openai.transcribe(filename_mp3)
 
                 transcription_price = self.config['transcription_price']
                 self.usage[user_id].add_transcription_seconds(audio_track.duration_seconds, transcription_price)

@@ -19,6 +19,8 @@ tests/
 test_*.py
 scratch_*.py
 *.docx
+*.mp3
 *.json
 !translations.json
 mem0_db/
+
