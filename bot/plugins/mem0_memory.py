@@ -69,7 +69,7 @@ class Mem0MemoryPlugin(Plugin):
         """
         try:
             chat_id_str = str(chat_id)
-            memories = self.memory.get_all(user_id=chat_id_str)
+            memories = self.memory.get_all(filters={"user_id": chat_id_str})
             if not memories:
                 return ""
                 
