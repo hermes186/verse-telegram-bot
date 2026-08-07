@@ -37,19 +37,25 @@ class Mem0MemoryPlugin(Plugin):
                     "openai_base_url": mem0_base_url,
                     "api_key": mem0_api_key,
                 }
-            },
-            "embedder": {
-                "provider": "openai",
-                "config": {
-                    "model": "jinaai/jina-embeddings-v2-base-en",
-                    "openai_base_url": mem0_base_url,
-                    "api_key": mem0_api_key,
-                }
             }
         }
-        # Mem0 uses standard ENV variables automatically if initialized without explicit config
-        # or we can pass config if needed. Here we rely on its internal env support.
-        self.memory = Memory()
+        
+        # Embedder must use global OPENAI settings, not MEM0 settings (which might be OpenRouter)
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        openai_base_url = os.getenv("OPENAI_BASE_URL")
+        
+        config["embedder"] = {
+            "provider": "openai",
+            "config": {
+                "model": "jinaai/jina-embeddings-v2-base-en",
+            }
+        }
+        if openai_base_url:
+            config["embedder"]["config"]["openai_base_url"] = openai_base_url
+        if openai_api_key:
+            config["embedder"]["config"]["api_key"] = openai_api_key
+
+        self.memory = Memory.from_config(config)
 
     def get_source_name(self) -> str:
         return "Mem0Memory"
