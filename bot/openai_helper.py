@@ -215,6 +215,13 @@ class OpenAIHelper:
         elif show_plugins_used:
             answer += f"\n\n---\n🔌 {', '.join(plugin_names)}"
 
+        # Background memory extraction
+        memory_plugin = self.plugin_manager.get_plugin('Mem0Memory')
+        if memory_plugin and hasattr(memory_plugin, 'add_memory_async'):
+            import asyncio
+            messages = [{"role": "user", "content": query}, {"role": "assistant", "content": answer}]
+            asyncio.create_task(memory_plugin.add_memory_async(chat_id, messages))
+
         return answer, response.usage.total_tokens
 
     async def get_chat_response_stream(self, chat_id: int, query: str):
@@ -316,6 +323,13 @@ class OpenAIHelper:
                 elif show_plugins_used:
                     answer += f"\n\n---\n🔌 {', '.join(plugin_names)}"
                     
+                # Background memory extraction
+                memory_plugin = self.plugin_manager.get_plugin('Mem0Memory')
+                if memory_plugin and hasattr(memory_plugin, 'add_memory_async'):
+                    import asyncio
+                    messages = [{"role": "user", "content": query}, {"role": "assistant", "content": answer.strip()}]
+                    asyncio.create_task(memory_plugin.add_memory_async(chat_id, messages))
+
                 yield answer.strip(), tokens_used
                 break
 
