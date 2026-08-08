@@ -571,16 +571,18 @@ class OpenAIHelper:
         """
         bot_language = self.config['bot_language']
         try:
+            format_ext = 'mp3' if 'fish-audio' in self.config['tts_model'] else 'opus'
             response = await self.tts_client.audio.speech.create(
                 model=self.config['tts_model'],
                 voice=self.config['tts_voice'],
                 input=text,
-                response_format='opus'
+                response_format=format_ext
             )
 
             temp_file = io.BytesIO()
             temp_file.write(response.read())
             temp_file.seek(0)
+            temp_file.name = f'voice.{format_ext}'
             return temp_file, len(text)
         except Exception as e:
             raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
