@@ -45,7 +45,7 @@ class ChatGPTTelegramBot:
         self.commands = [
             BotCommand(command='start', description=localized_text('help_description', bot_language)),
             BotCommand(command='reset', description=localized_text('reset_description', bot_language)),
-            BotCommand(command='model', description='切换模型 (Model)'),
+            BotCommand(command='model', description=localized_text('model_description', bot_language)),
             BotCommand(command='stats', description=localized_text('stats_description', bot_language))
         ]
         # If imaging is enabled, add the "image" command to the list
