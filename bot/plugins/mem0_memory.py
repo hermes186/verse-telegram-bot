@@ -40,20 +40,29 @@ class Mem0MemoryPlugin(Plugin):
             }
         }
         
-        # Embedder must use global OPENAI settings, not MEM0 settings (which might be OpenRouter)
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        openai_base_url = os.getenv("OPENAI_BASE_URL")
-        
+        # Embedder configuration (independent from LLM extraction model)
+        embedder_api_key = (
+            os.getenv("MEM0_EMBEDDER_API_KEY") or
+            os.getenv("MEM0_API_KEY") or
+            os.getenv("OPENAI_API_KEY")
+        )
+        embedder_base_url = (
+            os.getenv("MEM0_EMBEDDER_BASE_URL") or
+            os.getenv("MEM0_BASE_URL") or
+            os.getenv("OPENAI_BASE_URL")
+        )
+        embedder_model = os.getenv("MEM0_EMBEDDER_MODEL", "openai/text-embedding-3-small")
+        embedder_dims = int(os.getenv("MEM0_EMBEDDER_DIMS", "1536"))
+
         config["embedder"] = {
             "provider": "openai",
             "config": {
-                "model": "jinaai/jina-embeddings-v2-base-en",
+                "model": embedder_model,
+                "openai_base_url": embedder_base_url,
+                "api_key": embedder_api_key,
+                "embedding_dims": embedder_dims
             }
         }
-        if openai_base_url:
-            config["embedder"]["config"]["openai_base_url"] = openai_base_url
-        if openai_api_key:
-            config["embedder"]["config"]["api_key"] = openai_api_key
 
         self.memory = Memory.from_config(config)
 
@@ -74,7 +83,9 @@ class Mem0MemoryPlugin(Plugin):
                 return ""
                 
             # Format depends on Mem0 version
-            if isinstance(memories, dict) and 'memories' in memories:
+            if isinstance(memories, dict) and 'results' in memories:
+                memories_list = memories['results']
+            elif isinstance(memories, dict) and 'memories' in memories:
                 memories_list = memories['memories']
             elif isinstance(memories, list):
                 memories_list = memories
