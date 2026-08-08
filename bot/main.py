@@ -51,6 +51,7 @@ def main():
         'stream': os.environ.get('STREAM', 'true').lower() == 'true',
         'proxy': os.environ.get('PROXY', None) or os.environ.get('OPENAI_PROXY', None),
         'max_history_size': int(os.environ.get('MAX_HISTORY_SIZE', 15)),
+        'max_conversation_age_minutes': int(os.environ.get('MAX_CONVERSATION_AGE_MINUTES', 180)),
         'assistant_prompt': (
             open(os.environ['ASSISTANT_PROMPT_FILE'], 'r', encoding='utf-8').read()
             if 'ASSISTANT_PROMPT_FILE' in os.environ and os.path.exists(os.environ['ASSISTANT_PROMPT_FILE'])
