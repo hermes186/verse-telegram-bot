@@ -1096,9 +1096,8 @@ class ChatGPTTelegramBot:
         """
         Handle the /voice command
         """
-        if not await self.is_allowed(update):
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
-                            f'is not allowed to change the TTS voice')
+        if not await is_allowed(self.config, update, context):
+            await self.send_disallowed_message(update, context)
             return
             
         if not self.config.get('enable_tts_generation', False):
