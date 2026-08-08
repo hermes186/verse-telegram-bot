@@ -611,38 +611,47 @@ class OpenAIHelper:
         """
         bot_language = self.config['bot_language']
         try:
-            format_ext = 'mp3' if 'fish-audio' in self.config['tts_model'] else 'opus'
             voice_id = self.get_tts_voice(chat_id)
-            
-            tts_base_url = self.config.get('tts_base_url', self.config.get('base_url', ''))
-            
-            if tts_base_url and 'api.fish.audio' in tts_base_url:
-                import httpx
-                tts_api_key = self.config.get('tts_api_key', self.config.get('api_key'))
-                # Fish Audio requires the model name without 'fish-audio/' prefix if passed in headers
+            tts_base_url = self.config.get('tts_base_url') or self.config.get('base_url') or ''
+            is_fish = 'fish.audio' in tts_base_url or 'fish-audio' in self.config.get('tts_model', '')
+            format_ext = 'mp3' if is_fish else 'opus'
+
+            if is_fish:
+                tts_api_key = self.config.get('tts_api_key') or self.config.get('api_key')
+                # Fish Audio model header: s1 | s2-pro | s2.1-pro | s2.1-pro-free
                 model_name = self.config['tts_model'].replace('fish-audio/', '')
-                
+
                 url = tts_base_url.rstrip('/')
-                if not url.endswith('/v1'):
-                    url += '/v1'
-                url += '/tts'
-                
-                async with httpx.AsyncClient() as client:
+                if url.endswith('/tts'):
+                    pass
+                elif url.endswith('/v1'):
+                    url += '/tts'
+                else:
+                    url += '/v1/tts'
+
+                client_kwargs = {'timeout': 60.0}
+                proxy = self.config.get('proxy')
+                if proxy:
+                    client_kwargs['proxy'] = proxy
+
+                logging.info(f'Fish Audio TTS request: url={url} model={model_name} voice={voice_id}')
+                async with httpx.AsyncClient(**client_kwargs) as client:
                     resp = await client.post(
                         url,
                         headers={
                             "Authorization": f"Bearer {tts_api_key}",
                             "Content-Type": "application/json",
-                            "model": model_name
+                            "model": model_name,
                         },
                         json={
                             "text": text,
                             "reference_id": voice_id,
-                            "format": format_ext
+                            "format": format_ext,
                         },
-                        timeout=60.0
                     )
-                    resp.raise_for_status()
+                    if resp.status_code >= 400:
+                        body_preview = resp.text[:300] if resp.text else ''
+                        raise Exception(f"Fish Audio HTTP {resp.status_code}: {body_preview}")
                     audio_bytes = resp.content
             else:
                 client_to_use = getattr(self, 'tts_client', self.audio_client)

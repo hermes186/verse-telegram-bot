@@ -82,6 +82,8 @@ def main():
         'vision_max_tokens': int(os.environ.get('VISION_MAX_TOKENS', '300')),
         'tts_model': os.environ.get('TTS_MODEL', 'tts-1'),
         'tts_voice': os.environ.get('TTS_VOICE', 'alloy'),
+        'tts_api_key': os.environ.get('TTS_API_KEY'),
+        'tts_base_url': os.environ.get('TTS_BASE_URL'),
     }
 
     tts_voices_env = os.environ.get('TTS_VOICES', '')
@@ -95,6 +97,10 @@ def main():
             openai_config['tts_voices'] = {openai_config['tts_voice']: openai_config['tts_voice']}
     else:
         openai_config['tts_voices'] = {openai_config['tts_voice']: openai_config['tts_voice']}
+
+    # For Fish Audio, default voice must be a valid reference_id from TTS_VOICES
+    if openai_config['tts_voices'] and openai_config['tts_voice'] not in openai_config['tts_voices']:
+        openai_config['tts_voice'] = next(iter(openai_config['tts_voices']))
 
     if openai_config['enable_functions'] and not functions_available:
         logging.error(f'ENABLE_FUNCTIONS is set to true, but the model {model} does not support it. '
