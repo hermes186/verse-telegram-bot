@@ -135,15 +135,44 @@ class OpenAIHelper:
             self.audio_client = openai.AsyncOpenAI(**audio_kwargs)
 
         self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])
+        self.tts_voices: dict[str, str] = config.get('tts_voices', {config.get('tts_voice', 'alloy'): config.get('tts_voice', 'alloy')})
+        
+        self.settings_file = 'user_settings.json'
         self.user_models: dict[int, str] = {}  # {chat_id: model_name}
+        self.user_voices: dict[int, str] = {}  # {chat_id: voice_id}
+        self._load_user_settings()
 
         self.conversations: dict[int: list] = {}  # {chat_id: history}
         self.conversations_vision: dict[int: bool] = {}  # {chat_id: is_vision}
         self.last_updated: dict[int: datetime] = {}  # {chat_id: last_update_timestamp}
         self.models_without_tools: set[str] = set()
 
+    def _load_user_settings(self):
+        try:
+            if os.path.exists(self.settings_file):
+                with open(self.settings_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.user_models = {int(k): v for k, v in data.get('user_models', {}).items()}
+                    self.user_voices = {int(k): v for k, v in data.get('user_voices', {}).items()}
+        except Exception as e:
+            logging.error(f"Failed to load user settings: {e}")
+
+    def _save_user_settings(self):
+        try:
+            data = {
+                'user_models': self.user_models,
+                'user_voices': self.user_voices
+            }
+            with open(self.settings_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logging.error(f"Failed to save user settings: {e}")
+
     def get_models(self) -> list[str]:
         return self.models
+
+    def get_tts_voices(self) -> dict[str, str]:
+        return self.tts_voices
 
     @staticmethod
     async def __prepend_stream_item(item, gen):
@@ -162,7 +191,16 @@ class OpenAIHelper:
 
     def set_chat_model(self, chat_id: int, model_name: str) -> str:
         self.user_models[chat_id] = model_name
+        self._save_user_settings()
         return model_name
+
+    def get_tts_voice(self, chat_id: int) -> str:
+        return self.user_voices.get(chat_id, self.config.get('tts_voice', 'alloy'))
+
+    def set_tts_voice(self, chat_id: int, voice_id: str) -> str:
+        self.user_voices[chat_id] = voice_id
+        self._save_user_settings()
+        return voice_id
 
     def get_conversation_stats(self, chat_id: int) -> tuple[int, int]:
         """
@@ -554,10 +592,11 @@ class OpenAIHelper:
         except Exception as e:
             raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e
 
-    async def generate_speech(self, text: str) -> tuple[any, int]:
+    async def generate_speech(self, text: str, chat_id: int) -> tuple[any, int]:
         """
-        Generates an audio from the given text using TTS model.
-        :param prompt: The text to send to the model
+        Send text to OpenAI to generate speech
+        :param text: The text to send to the model
+        :param chat_id: The chat_id for user settings
         :return: The audio in bytes and the text size
         """
         bot_language = self.config['bot_language']
@@ -565,9 +604,10 @@ class OpenAIHelper:
             format_ext = 'mp3' if 'fish-audio' in self.config['tts_model'] else 'opus'
             # Use tts_client for speech generation
             client_to_use = getattr(self, 'tts_client', self.audio_client)
+            voice_id = self.get_tts_voice(chat_id)
             response = await client_to_use.audio.speech.create(
                 model=self.config['tts_model'],
-                voice=self.config['tts_voice'],
+                voice=voice_id,
                 input=text,
                 response_format=format_ext
             )

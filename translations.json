@@ -68,7 +68,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "ar": {
         "help_description": "عرض رسالة المساعدة",
@@ -139,7 +146,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "de": {
         "help_description": "Zeige die Hilfenachricht",
@@ -210,7 +224,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "es": {
         "help_description": "Muestra el mensaje de ayuda",
@@ -281,7 +302,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "fa": {
         "help_description": "نمایش پیغام راهنما",
@@ -352,7 +380,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "fi": {
         "help_description": "Näytä ohjeet",
@@ -423,7 +458,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "he": {
         "help_description": "הצג הודעת עזרה",
@@ -494,7 +536,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "id": {
         "help_description": "Menampilkan pesan bantuan",
@@ -565,7 +614,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "it": {
         "help_description": "Mostra il messaggio di aiuto",
@@ -636,7 +692,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "ms": {
         "help_description": "Lihat Mesej Bantuan",
@@ -707,7 +770,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "nl": {
         "help_description": "Toon uitleg",
@@ -778,7 +848,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "pl": {
         "help_description": "Pokaż wiadomości pomocnicze",
@@ -849,7 +926,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "pt-br": {
         "help_description": "Mostra a mensagem de ajuda",
@@ -920,7 +1004,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "ru": {
         "help_description": "Показать справочное сообщение",
@@ -991,7 +1082,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "tr": {
         "help_description": "Yardım mesajını göster",
@@ -1062,7 +1160,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "uk": {
         "help_description": "Показати повідомлення допомоги",
@@ -1133,7 +1238,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "uz": {
         "help_description": "Yordam xabarini ko'rsatish",
@@ -1204,7 +1316,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "vi": {
         "help_description": "Hiển thị trợ giúp",
@@ -1275,7 +1394,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "zh-cn": {
         "help_description": "显示帮助信息",
@@ -1346,7 +1472,14 @@
         "model_current": "Current model:",
         "model_select": "Please select a model to switch to:",
         "model_switched_title": "✅ *Model switched successfully*",
-        "model_switched_current": "Current model:"
+        "model_switched_current": "Current model:",
+        "voice_description": "Switch TTS voice 🗣️",
+        "voice_not_configured": "⚠️ No voices configured.",
+        "voice_title": "🗣️ *Select Voice*",
+        "voice_current": "Current voice:",
+        "voice_select": "Please select a voice to switch to:",
+        "voice_switched_title": "✅ *Voice switched successfully*",
+        "voice_switched_current": "Current voice:"
     },
     "zh-tw": {
         "help_description": "顯示幫助訊息",
@@ -1417,6 +1550,13 @@
         "model_current": "当前生效模型:",
         "model_select": "请选择要切换的模型：",
         "model_switched_title": "✅ *已成功切换模型*",
-        "model_switched_current": "生效模型:"
+        "model_switched_current": "生效模型:",
+        "voice_description": "切换语音音色 🗣️",
+        "voice_not_configured": "⚠️ 未配置可选音色列表。",
+        "voice_title": "🗣️ *选择音色 (Voice)*",
+        "voice_current": "当前生效音色:",
+        "voice_select": "请选择要切换的音色：",
+        "voice_switched_title": "✅ *已成功切换音色*",
+        "voice_switched_current": "生效音色:"
     }
 }

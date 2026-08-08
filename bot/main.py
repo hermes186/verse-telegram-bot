@@ -84,6 +84,18 @@ def main():
         'tts_voice': os.environ.get('TTS_VOICE', 'alloy'),
     }
 
+    tts_voices_env = os.environ.get('TTS_VOICES', '')
+    if tts_voices_env:
+        try:
+            openai_config['tts_voices'] = dict(
+                item.split(':', 1) for item in tts_voices_env.split(',') if ':' in item
+            )
+        except Exception as e:
+            logging.error(f"Error parsing TTS_VOICES: {e}")
+            openai_config['tts_voices'] = {openai_config['tts_voice']: openai_config['tts_voice']}
+    else:
+        openai_config['tts_voices'] = {openai_config['tts_voice']: openai_config['tts_voice']}
+
     if openai_config['enable_functions'] and not functions_available:
         logging.error(f'ENABLE_FUNCTIONS is set to true, but the model {model} does not support it. '
                         'Please set ENABLE_FUNCTIONS to false or use a model that supports it.')

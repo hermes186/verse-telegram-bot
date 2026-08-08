@@ -54,6 +54,7 @@ class ChatGPTTelegramBot:
 
         if self.config.get('enable_tts_generation', False):
             self.commands.append(BotCommand(command='tts', description=localized_text('tts_description', bot_language)))
+            self.commands.append(BotCommand(command='voice', description=localized_text('voice_description', bot_language)))
 
         # Add search command
         self.commands.append(BotCommand(command='search', description=localized_text('search_description', bot_language)))
@@ -282,7 +283,7 @@ class ChatGPTTelegramBot:
 
         async def _generate():
             try:
-                speech_file, text_length = await self.openai.generate_speech(text=tts_query)
+                speech_file, text_length = await self.openai.generate_speech(text=tts_query, chat_id=update.effective_chat.id)
 
                 await update.effective_message.reply_voice(
                     reply_to_message_id=get_reply_to_message_id(self.config, update),
@@ -1091,6 +1092,75 @@ class ChatGPTTelegramBot:
         )
         await query.edit_message_text(text=text, parse_mode=constants.ParseMode.MARKDOWN)
 
+    async def voice_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Handle the /voice command
+        """
+        if not await self.is_allowed(update):
+            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id}) '
+                            f'is not allowed to change the TTS voice')
+            return
+            
+        if not self.config.get('enable_tts_generation', False):
+            return
+
+        chat_id = update.effective_chat.id
+        voices = self.openai.get_tts_voices()
+        current_voice = self.openai.get_tts_voice(chat_id)
+
+        bot_language = self.config['bot_language']
+
+        if not voices:
+            await update.effective_message.reply_text(
+                text=localized_text('voice_not_configured', bot_language),
+                parse_mode=constants.ParseMode.MARKDOWN
+            )
+            return
+
+        keyboard = []
+        # voices is a dict: {voice_id: display_name}
+        for vid, vname in voices.items():
+            label = f"✅ {vname}" if vid == current_voice else vname
+            keyboard.append([InlineKeyboardButton(label, callback_data=f"select_voice:{vid}")])
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        voice_title = localized_text('voice_title', bot_language)
+        voice_current = localized_text('voice_current', bot_language)
+        voice_select = localized_text('voice_select', bot_language)
+        
+        current_name = voices.get(current_voice, current_voice)
+        text = (
+            f"{voice_title}\n\n"
+            f"{voice_current} `{current_name}`\n\n"
+            f"{voice_select}"
+        )
+        await update.effective_message.reply_text(
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode=constants.ParseMode.MARKDOWN
+        )
+
+    async def handle_select_voice(self, update: Update, context: CallbackContext):
+        query = update.callback_query
+        await query.answer()
+        chat_id = update.effective_chat.id
+        voice_id = query.data.split('select_voice:')[1]
+        bot_language = self.config['bot_language']
+
+        new_v = self.openai.set_tts_voice(chat_id, voice_id)
+        voice_switched_title = localized_text('voice_switched_title', bot_language)
+        voice_switched_current = localized_text('voice_switched_current', bot_language)
+        
+        voices = self.openai.get_tts_voices()
+        new_name = voices.get(new_v, new_v)
+
+        text = (
+            f"{voice_switched_title}\n\n"
+            f"{voice_switched_current} `{new_name}`"
+        )
+        await query.edit_message_text(text=text, parse_mode=constants.ParseMode.MARKDOWN)
+
     async def handle_callback_inline_query(self, update: Update, context: CallbackContext):
         """
         Handle the callback query from the inline query result or provider/model button selections
@@ -1098,6 +1168,9 @@ class ChatGPTTelegramBot:
         callback_data = update.callback_query.data
         if callback_data.startswith('select_model:'):
             await self.handle_select_model(update, context)
+            return
+        if callback_data.startswith('select_voice:'):
+            await self.handle_select_voice(update, context)
             return
         user_id = update.callback_query.from_user.id
         inline_message_id = update.callback_query.inline_message_id
@@ -1301,6 +1374,7 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler('reset', self.reset))
         application.add_handler(CommandHandler('search', self.search_command))
         application.add_handler(CommandHandler('model', self.model_command))
+        application.add_handler(CommandHandler('voice', self.voice_command))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('tts', self.tts))
         application.add_handler(CommandHandler('start', self.help))
