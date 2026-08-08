@@ -312,10 +312,16 @@ class ChatGPTTelegramBot:
             try:
                 speech_file, text_length = await self.openai.generate_speech(text=tts_query)
 
-                await update.effective_message.reply_voice(
-                    reply_to_message_id=get_reply_to_message_id(self.config, update),
-                    voice=speech_file
-                )
+                if speech_file.name.endswith('.mp3'):
+                    await update.effective_message.reply_audio(
+                        reply_to_message_id=get_reply_to_message_id(self.config, update),
+                        audio=speech_file
+                    )
+                else:
+                    await update.effective_message.reply_voice(
+                        reply_to_message_id=get_reply_to_message_id(self.config, update),
+                        voice=speech_file
+                    )
                 speech_file.close()
                 # add image request to users usage tracker
                 user_id = update.message.from_user.id
@@ -326,11 +332,11 @@ class ChatGPTTelegramBot:
 
             except Exception as e:
                 logging.exception(e)
+                # Avoid Markdown parse errors by not using Markdown mode for raw exception strings
                 await update.effective_message.reply_text(
                     message_thread_id=get_thread_id(update),
                     reply_to_message_id=get_reply_to_message_id(self.config, update),
-                    text=f"{localized_text('tts_fail', self.config['bot_language'])}: {str(e)}",
-                    parse_mode=constants.ParseMode.MARKDOWN
+                    text=f"⚠️ {localized_text('tts_fail', self.config['bot_language'])}: {str(e)}"
                 )
 
         await wrap_with_indicator(update, context, _generate, constants.ChatAction.UPLOAD_VOICE)

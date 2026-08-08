@@ -72,8 +72,6 @@ def main():
         'vision_prompt': os.environ.get('VISION_PROMPT', 'What is in this image'),
         'vision_detail': os.environ.get('VISION_DETAIL', 'auto'),
         'vision_max_tokens': int(os.environ.get('VISION_MAX_TOKENS', '300')),
-        'tts_api_key': os.environ.get('TTS_API_KEY'),
-        'tts_base_url': os.environ.get('TTS_BASE_URL'),
         'tts_model': os.environ.get('TTS_MODEL', 'tts-1'),
         'tts_voice': os.environ.get('TTS_VOICE', 'alloy'),
     }
