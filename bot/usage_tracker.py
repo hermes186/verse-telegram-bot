@@ -200,7 +200,10 @@ class UsageTracker:
 
     def add_tts_request(self, text_length, tts_model, tts_prices):
         tts_models = ['tts-1', 'tts-1-hd']
-        price = tts_prices[tts_models.index(tts_model)]
+        try:
+            price = tts_prices[tts_models.index(tts_model)]
+        except ValueError:
+            price = 0.0  # Default to 0 price for custom models like fish-audio
         today = date.today()
         tts_price = round(text_length * price / 1000, 2)
         self.add_current_costs(tts_price)

@@ -239,6 +239,7 @@ class OpenAIHelper:
         enable_functions = self.config['enable_functions'] and not self.conversations_vision[chat_id]
         
         while True:
+            answer = ''
             function_name = ''
             arguments = ''
             tool_call_id = None

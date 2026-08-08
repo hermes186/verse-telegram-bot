@@ -43,11 +43,10 @@ class ChatGPTTelegramBot:
         self.video_helper = VideoIntelligenceHelper()
         bot_language = self.config['bot_language']
         self.commands = [
-            BotCommand(command='help', description=localized_text('help_description', bot_language)),
+            BotCommand(command='start', description=localized_text('help_description', bot_language)),
             BotCommand(command='reset', description=localized_text('reset_description', bot_language)),
             BotCommand(command='model', description='切换模型 (Model)'),
-            BotCommand(command='stats', description=localized_text('stats_description', bot_language)),
-            BotCommand(command='resend', description=localized_text('resend_description', bot_language))
+            BotCommand(command='stats', description=localized_text('stats_description', bot_language))
         ]
         # If imaging is enabled, add the "image" command to the list
         if self.config.get('enable_image_generation', False):
@@ -62,9 +61,7 @@ class ChatGPTTelegramBot:
         self.disallowed_message = localized_text('disallowed', bot_language)
         self.budget_limit_message = localized_text('budget_limit', bot_language)
         self.usage = {}
-        self.last_message = {}
         self.inline_queries_cache = {}
-
     async def help(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Shows the help menu.
@@ -188,33 +185,7 @@ class ChatGPTTelegramBot:
         usage_text = text_current_conversation + text_today + text_month + text_budget
         await update.message.reply_text(usage_text, parse_mode=constants.ParseMode.MARKDOWN)
 
-    async def resend(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Resend the last request
-        """
-        if not await is_allowed(self.config, update, context):
-            logging.warning(f'User {update.message.from_user.name}  (id: {update.message.from_user.id})'
-                            ' is not allowed to resend the message')
-            await self.send_disallowed_message(update, context)
-            return
 
-        chat_id = update.effective_chat.id
-        if chat_id not in self.last_message:
-            logging.warning(f'User {update.message.from_user.name} (id: {update.message.from_user.id})'
-                            ' does not have anything to resend')
-            await update.effective_message.reply_text(
-                message_thread_id=get_thread_id(update),
-                text=localized_text('resend_failed', self.config['bot_language'])
-            )
-            return
-
-        # Update message text, clear self.last_message and send the request to prompt
-        logging.info(f'Resending the last prompt from user: {update.message.from_user.name} '
-                     f'(id: {update.message.from_user.id})')
-        with update.message._unfrozen() as message:
-            message.text = self.last_message.pop(chat_id)
-
-        await self.prompt(update=update, context=context)
 
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -333,7 +304,7 @@ class ChatGPTTelegramBot:
                     text=f"⚠️ {localized_text('tts_fail', self.config['bot_language'])}: {str(e)}"
                 )
 
-        await wrap_with_indicator(update, context, _generate, constants.ChatAction.UPLOAD_VOICE)
+        await wrap_with_indicator(update, context, _generate, constants.ChatAction.RECORD_VOICE)
 
     async def transcribe(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
@@ -751,8 +722,6 @@ class ChatGPTTelegramBot:
         if not prompt:
             return
 
-        self.last_message[chat_id] = prompt
-
         if is_group_chat(update):
             trigger_keyword = self.config['group_trigger_keyword']
 
@@ -858,6 +827,30 @@ class ChatGPTTelegramBot:
                     i += 1
                     if tokens != 'not_finished':
                         total_tokens = int(tokens)
+                        
+                        import re
+                        image_pattern = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+                        images = image_pattern.findall(content)
+                        if images:
+                            clean_content = image_pattern.sub('', content).strip()
+                            if clean_content:
+                                await edit_message_with_retry(context, chat_id, str(sent_message.message_id),
+                                                              text=clean_content, markdown=True)
+                            else:
+                                try:
+                                    await context.bot.delete_message(chat_id=chat_id, message_id=sent_message.message_id)
+                                except Exception:
+                                    pass
+                                    
+                            for alt, url in images:
+                                try:
+                                    await update.effective_message.reply_photo(
+                                        message_thread_id=get_thread_id(update),
+                                        photo=url,
+                                        caption=alt[:1024] if alt else None
+                                    )
+                                except Exception as e:
+                                    logging.error(f"Failed to send photo {url}: {e}")
 
             else:
                 async def _reply():
@@ -867,28 +860,45 @@ class ChatGPTTelegramBot:
                     if is_direct_result(response):
                         return await handle_direct_result(self.config, update, response)
 
-                    # Split into chunks of 4096 characters (Telegram's message limit)
-                    chunks = split_into_chunks(response)
+                    import re
+                    image_pattern = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+                    images = image_pattern.findall(response)
+                    if images:
+                        response = image_pattern.sub('', response).strip()
 
-                    for index, chunk in enumerate(chunks):
-                        try:
-                            await update.effective_message.reply_text(
-                                message_thread_id=get_thread_id(update),
-                                reply_to_message_id=get_reply_to_message_id(self.config,
-                                                                            update) if index == 0 else None,
-                                text=chunk,
-                                parse_mode=constants.ParseMode.MARKDOWN
-                            )
-                        except Exception:
+                    if response:
+                        # Split into chunks of 4096 characters (Telegram's message limit)
+                        chunks = split_into_chunks(response)
+
+                        for index, chunk in enumerate(chunks):
                             try:
                                 await update.effective_message.reply_text(
                                     message_thread_id=get_thread_id(update),
                                     reply_to_message_id=get_reply_to_message_id(self.config,
                                                                                 update) if index == 0 else None,
-                                    text=chunk
+                                    text=chunk,
+                                    parse_mode=constants.ParseMode.MARKDOWN
                                 )
-                            except Exception as exception:
-                                raise exception
+                            except Exception:
+                                try:
+                                    await update.effective_message.reply_text(
+                                        message_thread_id=get_thread_id(update),
+                                        reply_to_message_id=get_reply_to_message_id(self.config,
+                                                                                    update) if index == 0 else None,
+                                        text=chunk
+                                    )
+                                except Exception as e:
+                                    raise e
+
+                    for alt, url in images:
+                        try:
+                            await update.effective_message.reply_photo(
+                                message_thread_id=get_thread_id(update),
+                                photo=url,
+                                caption=alt[:1024] if alt else None
+                            )
+                        except Exception as e:
+                            logging.error(f"Failed to send photo {url}: {e}")
 
                 await wrap_with_indicator(update, context, _reply, constants.ChatAction.TYPING)
 
@@ -937,7 +947,7 @@ class ChatGPTTelegramBot:
                 title=localized_text("ask_chatgpt", bot_language),
                 input_message_content=InputTextMessageContent(message_content),
                 description=message_content,
-                thumbnail_url='https://user-images.githubusercontent.com/11541888/223106202-7576ff11-2c8e-408d-94ea-b02a7a32149a.png',
+                thumbnail_url='https://x0.at/yaF8.jpg',
                 reply_markup=reply_markup
             )
 
@@ -1277,14 +1287,12 @@ class ChatGPTTelegramBot:
             .build()
 
         application.add_handler(CommandHandler('reset', self.reset))
-        application.add_handler(CommandHandler('help', self.help))
         application.add_handler(CommandHandler('search', self.search_command))
         application.add_handler(CommandHandler('model', self.model_command))
         application.add_handler(CommandHandler('image', self.image))
         application.add_handler(CommandHandler('tts', self.tts))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
-        application.add_handler(CommandHandler('resend', self.resend))
         application.add_handler(CommandHandler(
             'chat', self.prompt, filters=filters.ChatType.GROUP | filters.ChatType.SUPERGROUP)
         )
