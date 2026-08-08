@@ -561,16 +561,31 @@ class OpenAIHelper:
         """
         bot_language = self.config['bot_language']
         try:
-            response = await self.audio_client.audio.speech.create(
+            format_ext = 'mp3' if 'fish-audio' in self.config['tts_model'] else 'opus'
+            # Use tts_client for speech generation
+            client_to_use = getattr(self, 'tts_client', self.audio_client)
+            response = await client_to_use.audio.speech.create(
                 model=self.config['tts_model'],
                 voice=self.config['tts_voice'],
                 input=text,
-                response_format='opus'
+                response_format=format_ext
             )
+            audio_bytes = response.read()
 
-            temp_file = io.BytesIO()
-            temp_file.write(response.read())
+            if format_ext == 'mp3':
+                import asyncio
+                process = await asyncio.create_subprocess_exec(
+                    'ffmpeg', '-i', 'pipe:0', '-c:a', 'libopus', '-b:a', '48k', '-vbr', 'on', '-f', 'ogg', 'pipe:1',
+                    stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
+                )
+                stdout_data, _ = await process.communicate(input=audio_bytes)
+                if process.returncode == 0:
+                    audio_bytes = stdout_data
+                    format_ext = 'ogg'
+
+            temp_file = io.BytesIO(audio_bytes)
             temp_file.seek(0)
+            temp_file.name = f'voice.{format_ext}'
             return temp_file, len(text)
         except Exception as e:
             raise Exception(f"⚠️ _{localized_text('error', bot_language)}._ ⚠️\n{str(e)}") from e

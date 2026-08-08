@@ -312,16 +312,10 @@ class ChatGPTTelegramBot:
             try:
                 speech_file, text_length = await self.openai.generate_speech(text=tts_query)
 
-                if speech_file.name.endswith('.mp3'):
-                    await update.effective_message.reply_audio(
-                        reply_to_message_id=get_reply_to_message_id(self.config, update),
-                        audio=speech_file
-                    )
-                else:
-                    await update.effective_message.reply_voice(
-                        reply_to_message_id=get_reply_to_message_id(self.config, update),
-                        voice=speech_file
-                    )
+                await update.effective_message.reply_voice(
+                    reply_to_message_id=get_reply_to_message_id(self.config, update),
+                    voice=speech_file
+                )
                 speech_file.close()
                 # add image request to users usage tracker
                 user_id = update.message.from_user.id
