@@ -622,9 +622,14 @@ class OpenAIHelper:
                 # Fish Audio requires the model name without 'fish-audio/' prefix if passed in headers
                 model_name = self.config['tts_model'].replace('fish-audio/', '')
                 
+                url = tts_base_url.rstrip('/')
+                if not url.endswith('/v1'):
+                    url += '/v1'
+                url += '/tts'
+                
                 async with httpx.AsyncClient() as client:
                     resp = await client.post(
-                        f"{tts_base_url.rstrip('/')}/tts",
+                        url,
                         headers={
                             "Authorization": f"Bearer {tts_api_key}",
                             "Content-Type": "application/json",
