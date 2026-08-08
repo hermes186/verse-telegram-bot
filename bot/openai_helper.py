@@ -134,6 +134,16 @@ class OpenAIHelper:
                 audio_kwargs['base_url'] = audio_base_url
             self.audio_client = openai.AsyncOpenAI(**audio_kwargs)
 
+        self.tts_client = self.client
+        tts_api_key = config.get('tts_api_key', config.get('api_key'))
+        tts_base_url = config.get('tts_base_url', config.get('base_url'))
+        if tts_api_key != kwargs['api_key'] or tts_base_url != kwargs.get('base_url'):
+            tts_kwargs = kwargs.copy()
+            tts_kwargs['api_key'] = tts_api_key
+            if tts_base_url:
+                tts_kwargs['base_url'] = tts_base_url
+            self.tts_client = openai.AsyncOpenAI(**tts_kwargs)
+
         self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])
         self.tts_voices: dict[str, str] = config.get('tts_voices', {config.get('tts_voice', 'alloy'): config.get('tts_voice', 'alloy')})
         
@@ -602,16 +612,42 @@ class OpenAIHelper:
         bot_language = self.config['bot_language']
         try:
             format_ext = 'mp3' if 'fish-audio' in self.config['tts_model'] else 'opus'
-            # Use tts_client for speech generation
-            client_to_use = getattr(self, 'tts_client', self.audio_client)
             voice_id = self.get_tts_voice(chat_id)
-            response = await client_to_use.audio.speech.create(
-                model=self.config['tts_model'],
-                voice=voice_id,
-                input=text,
-                response_format=format_ext
-            )
-            audio_bytes = response.read()
+            
+            tts_base_url = self.config.get('tts_base_url', self.config.get('base_url', ''))
+            
+            if tts_base_url and 'api.fish.audio' in tts_base_url:
+                import httpx
+                tts_api_key = self.config.get('tts_api_key', self.config.get('api_key'))
+                # Fish Audio requires the model name without 'fish-audio/' prefix if passed in headers
+                model_name = self.config['tts_model'].replace('fish-audio/', '')
+                
+                async with httpx.AsyncClient() as client:
+                    resp = await client.post(
+                        f"{tts_base_url.rstrip('/')}/tts",
+                        headers={
+                            "Authorization": f"Bearer {tts_api_key}",
+                            "Content-Type": "application/json",
+                            "model": model_name
+                        },
+                        json={
+                            "text": text,
+                            "reference_id": voice_id,
+                            "format": format_ext
+                        },
+                        timeout=60.0
+                    )
+                    resp.raise_for_status()
+                    audio_bytes = resp.content
+            else:
+                client_to_use = getattr(self, 'tts_client', self.audio_client)
+                response = await client_to_use.audio.speech.create(
+                    model=self.config['tts_model'],
+                    voice=voice_id,
+                    input=text,
+                    response_format=format_ext
+                )
+                audio_bytes = response.read()
 
             if format_ext == 'mp3':
                 import asyncio

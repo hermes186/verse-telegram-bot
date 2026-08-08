@@ -131,6 +131,8 @@ def main():
         'vision_token_price': float(os.environ.get('VISION_TOKEN_PRICE', '0.01')),
         'image_receive_mode': os.environ.get('IMAGE_FORMAT', "photo"),
         'tts_model': os.environ.get('TTS_MODEL', 'tts-1'),
+        'tts_api_key': os.environ.get('TTS_API_KEY'),
+        'tts_base_url': os.environ.get('TTS_BASE_URL'),
         'tts_prices': [float(i) for i in os.environ.get('TTS_PRICES', "0.015,0.030").split(",")],
         'transcription_price': float(os.environ.get('TRANSCRIPTION_PRICE', 0.006)),
         'bot_language': os.environ.get('BOT_LANGUAGE', 'en'),
