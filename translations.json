@@ -61,7 +61,14 @@
         "ask_chatgpt": "Ask Verse",
         "loading": "Loading...",
         "function_unavailable_in_inline_mode": "This function is unavailable in inline mode",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "ar": {
         "help_description": "عرض رسالة المساعدة",
@@ -125,7 +132,14 @@
         "ask_chatgpt": "سؤال Verse",
         "loading": "قيد التحميل...",
         "function_unavailable_in_inline_mode": "هذه الوظيفة غير متوفرة في الوضع المضمن",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "de": {
         "help_description": "Zeige die Hilfenachricht",
@@ -189,7 +203,14 @@
         "ask_chatgpt": "Frage Verse",
         "loading": "Lade...",
         "function_unavailable_in_inline_mode": "Diese Funktion ist im Inline-Modus nicht verfügbar",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "es": {
         "help_description": "Muestra el mensaje de ayuda",
@@ -253,7 +274,14 @@
         "ask_chatgpt": "Preguntar a Verse",
         "loading": "Cargando...",
         "function_unavailable_in_inline_mode": "Esta función no está disponible en el modo inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "fa": {
         "help_description": "نمایش پیغام راهنما",
@@ -317,7 +345,14 @@
         "ask_chatgpt": "از Verse بپرسید",
         "loading": "در حال بارگذاری...",
         "function_unavailable_in_inline_mode": "این عملکرد در حالت آنلاین در دسترس نیست",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "fi": {
         "help_description": "Näytä ohjeet",
@@ -381,7 +416,14 @@
         "ask_chatgpt": "Kysy Verse:ltä",
         "loading": "Lataa...",
         "function_unavailable_in_inline_mode": "Tämä toiminto ei ole käytettävissä sisäisessä tilassa",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "he": {
         "help_description": "הצג הודעת עזרה",
@@ -445,7 +487,14 @@
         "ask_chatgpt": "שאל את Verse",
         "loading": "טוען...",
         "function_unavailable_in_inline_mode": "הפונקציה לא זמינה במצב inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "id": {
         "help_description": "Menampilkan pesan bantuan",
@@ -509,7 +558,14 @@
         "ask_chatgpt": "Tanya Verse",
         "loading": "Sedang memuat...",
         "function_unavailable_in_inline_mode": "Fungsi ini tidak tersedia dalam mode inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "it": {
         "help_description": "Mostra il messaggio di aiuto",
@@ -573,7 +629,14 @@
         "ask_chatgpt": "Chiedi a Verse",
         "loading": "Carico...",
         "function_unavailable_in_inline_mode": "Questa funzione non è disponibile in modalità inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "ms": {
         "help_description": "Lihat Mesej Bantuan",
@@ -637,7 +700,14 @@
         "ask_chatgpt": "Tanya Verse",
         "loading": "Memuatkan...",
         "function_unavailable_in_inline_mode": "Fungsi ini tidak tersedia dalam mod sebaris",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "nl": {
         "help_description": "Toon uitleg",
@@ -701,7 +771,14 @@
         "ask_chatgpt": "Vraag Verse",
         "loading": "Laden...",
         "function_unavailable_in_inline_mode": "Deze functie is niet beschikbaar in de inline modus",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "pl": {
         "help_description": "Pokaż wiadomości pomocnicze",
@@ -765,7 +842,14 @@
         "ask_chatgpt": "Zapytaj Verse",
         "loading": "Ładowanie...",
         "function_unavailable_in_inline_mode": "Ta funkcja jest niedostępna w trybie inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "pt-br": {
         "help_description": "Mostra a mensagem de ajuda",
@@ -829,7 +913,14 @@
         "ask_chatgpt": "Perguntar ao Verse",
         "loading": "Carregando...",
         "function_unavailable_in_inline_mode": "Esta função não está disponível no modo inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "ru": {
         "help_description": "Показать справочное сообщение",
@@ -893,7 +984,14 @@
         "ask_chatgpt": "Спросить Verse",
         "loading": "Загрузка...",
         "function_unavailable_in_inline_mode": "Эта функция недоступна в режиме inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "tr": {
         "help_description": "Yardım mesajını göster",
@@ -957,7 +1055,14 @@
         "ask_chatgpt": "Verse'ye sor",
         "loading": "Yükleniyor...",
         "function_unavailable_in_inline_mode": "Bu işlev inline modda kullanılamaz",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "uk": {
         "help_description": "Показати повідомлення допомоги",
@@ -1021,7 +1126,14 @@
         "ask_chatgpt": "Запитати Verse",
         "loading": "Завантаження...",
         "function_unavailable_in_inline_mode": "Ця функція недоступна в режимі Inline",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "uz": {
         "help_description": "Yordam xabarini ko'rsatish",
@@ -1085,7 +1197,14 @@
         "ask_chatgpt": "Versedan so'rash",
         "loading": "Yuklanmoqda...",
         "function_unavailable_in_inline_mode": "Bu funksiya inline rejimida mavjud emas",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "vi": {
         "help_description": "Hiển thị trợ giúp",
@@ -1149,7 +1268,14 @@
         "ask_chatgpt": "Hỏi Verse",
         "loading": "Đang tải...",
         "function_unavailable_in_inline_mode": "Chức năng này không khả dụng trong chế độ nội tuyến",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "zh-cn": {
         "help_description": "显示帮助信息",
@@ -1213,7 +1339,14 @@
         "ask_chatgpt": "询问Verse",
         "loading": "载入中...",
         "function_unavailable_in_inline_mode": "此功能在内联模式下不可用",
-        "model_description": "Switch model 🧠"
+        "model_description": "Switch model 🧠",
+        "search_description": "Search the web 🔍",
+        "model_not_configured": "⚠️ No models configured.",
+        "model_title": "🤖 *Select Model*",
+        "model_current": "Current model:",
+        "model_select": "Please select a model to switch to:",
+        "model_switched_title": "✅ *Model switched successfully*",
+        "model_switched_current": "Current model:"
     },
     "zh-tw": {
         "help_description": "顯示幫助訊息",
@@ -1277,6 +1410,13 @@
         "ask_chatgpt": "詢問 Verse",
         "loading": "載入中...",
         "function_unavailable_in_inline_mode": "此功能在內嵌模式下不可用",
-        "model_description": "切换模型 (Model)"
+        "model_description": "切换模型 (Model)",
+        "search_description": "搜索网页 🔍",
+        "model_not_configured": "⚠️ 未配置可选模型列表。",
+        "model_title": "🤖 *选择模型 (Model)*",
+        "model_current": "当前生效模型:",
+        "model_select": "请选择要切换的模型：",
+        "model_switched_title": "✅ *已成功切换模型*",
+        "model_switched_current": "生效模型:"
     }
 }

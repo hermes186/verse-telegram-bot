@@ -1043,9 +1043,11 @@ class ChatGPTTelegramBot:
         models = self.openai.get_models()
         current_m = self.openai.get_chat_model(chat_id)
 
+        bot_language = self.config['bot_language']
+
         if not models:
             await update.effective_message.reply_text(
-                text="⚠️ 未配置可选模型列表。",
+                text=localized_text('model_not_configured', bot_language),
                 parse_mode=constants.ParseMode.MARKDOWN
             )
             return
@@ -1056,10 +1058,15 @@ class ChatGPTTelegramBot:
             keyboard.append([InlineKeyboardButton(label, callback_data=f"select_model:{mname}")])
 
         reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        model_title = localized_text('model_title', bot_language)
+        model_current = localized_text('model_current', bot_language)
+        model_select = localized_text('model_select', bot_language)
+        
         text = (
-            f"🤖 *选择模型 (Model)*\n\n"
-            f"当前生效模型: `{current_m}`\n\n"
-            f"请选择要切换的模型："
+            f"{model_title}\n\n"
+            f"{model_current} `{current_m}`\n\n"
+            f"{model_select}"
         )
         await update.effective_message.reply_text(
             text=text,
@@ -1072,11 +1079,15 @@ class ChatGPTTelegramBot:
         await query.answer()
         chat_id = update.effective_chat.id
         model_name = query.data.split('select_model:')[1]
+        bot_language = self.config['bot_language']
 
         new_m = self.openai.set_chat_model(chat_id, model_name)
+        model_switched_title = localized_text('model_switched_title', bot_language)
+        model_switched_current = localized_text('model_switched_current', bot_language)
+
         text = (
-            f"✅ *已成功切换模型*\n\n"
-            f"生效模型: `{new_m}`"
+            f"{model_switched_title}\n\n"
+            f"{model_switched_current} `{new_m}`"
         )
         await query.edit_message_text(text=text, parse_mode=constants.ParseMode.MARKDOWN)
 
