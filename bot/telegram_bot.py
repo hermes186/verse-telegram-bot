@@ -58,9 +58,7 @@ class ChatGPTTelegramBot:
         # Add search command
         self.commands.append(BotCommand(command='search', description=localized_text('search_description', bot_language)))
 
-        self.group_commands = [BotCommand(
-            command='chat', description=localized_text('chat_description', bot_language)
-        )] + self.commands
+        self.group_commands = self.commands
         self.disallowed_message = localized_text('disallowed', bot_language)
         self.budget_limit_message = localized_text('budget_limit', bot_language)
         self.usage = {}
@@ -1296,9 +1294,6 @@ class ChatGPTTelegramBot:
         application.add_handler(CommandHandler('tts', self.tts))
         application.add_handler(CommandHandler('start', self.help))
         application.add_handler(CommandHandler('stats', self.stats))
-        application.add_handler(CommandHandler(
-            'chat', self.prompt, filters=filters.ChatType.GROUP | filters.ChatType.SUPERGROUP)
-        )
         application.add_handler(MessageHandler(
             filters.PHOTO | filters.Document.IMAGE,
             self.vision))
