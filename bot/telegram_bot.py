@@ -55,6 +55,9 @@ class ChatGPTTelegramBot:
         if self.config.get('enable_tts_generation', False):
             self.commands.append(BotCommand(command='tts', description=localized_text('tts_description', bot_language)))
 
+        # Add search command
+        self.commands.append(BotCommand(command='search', description=localized_text('search_description', bot_language)))
+
         self.group_commands = [BotCommand(
             command='chat', description=localized_text('chat_description', bot_language)
         )] + self.commands
