@@ -134,6 +134,16 @@ class OpenAIHelper:
                 audio_kwargs['base_url'] = audio_base_url
             self.audio_client = openai.AsyncOpenAI(**audio_kwargs)
 
+        self.tts_client = self.client
+        tts_api_key = config.get('tts_api_key', config.get('audio_api_key', config.get('api_key')))
+        tts_base_url = config.get('tts_base_url', config.get('audio_base_url', config.get('base_url')))
+        if tts_api_key != kwargs['api_key'] or tts_base_url != kwargs.get('base_url'):
+            tts_kwargs = kwargs.copy()
+            tts_kwargs['api_key'] = tts_api_key
+            if tts_base_url:
+                tts_kwargs['base_url'] = tts_base_url
+            self.tts_client = openai.AsyncOpenAI(**tts_kwargs)
+
         self.models: list[str] = config.get('models', [config.get('model', 'gpt-4o')])
         self.user_models: dict[int, str] = {}  # {chat_id: model_name}
 
@@ -561,7 +571,7 @@ class OpenAIHelper:
         """
         bot_language = self.config['bot_language']
         try:
-            response = await self.audio_client.audio.speech.create(
+            response = await self.tts_client.audio.speech.create(
                 model=self.config['tts_model'],
                 voice=self.config['tts_voice'],
                 input=text,
