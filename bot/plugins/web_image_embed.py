@@ -1,7 +1,6 @@
 import os
 import random
 import asyncio
-import functools
 import requests
 from typing import Dict
 
@@ -58,16 +57,12 @@ class WebImageEmbedPlugin(Plugin):
             headers["X-Project-ID"] = os.getenv('TAVILY_PROJECT_ID')
 
         try:
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                functools.partial(
-                    requests.post,
-                    f"{self.base_url.rstrip('/')}/search",
-                    json=payload,
-                    headers=headers,
-                    timeout=30,
-                )
+            response = await asyncio.to_thread(
+                requests.post,
+                f"{self.base_url.rstrip('/')}/search",
+                json=payload,
+                headers=headers,
+                timeout=30,
             )
             response.raise_for_status()
             data = response.json()
