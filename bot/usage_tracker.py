@@ -231,22 +231,18 @@ class UsageTracker:
 
         :return: total amount of characters converted to speech per day and per month
         """
-
-        tts_models = ['tts-1', 'tts-1-hd']
         today = date.today()
-        characters_day = 0
-        for tts_model in tts_models:
-            if tts_model in self.usage["usage_history"]["tts_characters"] and \
-                str(today) in self.usage["usage_history"]["tts_characters"][tts_model]:
-                characters_day += self.usage["usage_history"]["tts_characters"][tts_model][str(today)]
-
         month = str(today)[:7]  # year-month as string
+        characters_day = 0
         characters_month = 0
-        for tts_model in tts_models:
-            if tts_model in self.usage["usage_history"]["tts_characters"]: 
-                for today, characters in self.usage["usage_history"]["tts_characters"][tts_model].items():
-                    if today.startswith(month):
-                        characters_month += characters
+
+        for tts_model, dates_dict in self.usage["usage_history"]["tts_characters"].items():
+            if str(today) in dates_dict:
+                characters_day += dates_dict[str(today)]
+            for date_str, characters in dates_dict.items():
+                if date_str.startswith(month):
+                    characters_month += characters
+
         return int(characters_day), int(characters_month)
 
 
