@@ -23,11 +23,14 @@ class Mem0MemoryPlugin(Plugin):
         mem0_model = os.getenv("MEM0_MODEL") or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         mem0_base_url = os.getenv("MEM0_BASE_URL") or os.getenv("OPENAI_BASE_URL")
         
+        embedder_dims = int(os.getenv("MEM0_EMBEDDER_DIMS", "1536"))
+
         config = {
             "vector_store": {
                 "provider": "qdrant",
                 "config": {
                     "path": db_path,
+                    "embedding_model_dims": embedder_dims,
                 }
             },
             "llm": {
@@ -52,7 +55,7 @@ class Mem0MemoryPlugin(Plugin):
             os.getenv("OPENAI_BASE_URL")
         )
         embedder_model = os.getenv("MEM0_EMBEDDER_MODEL", "openai/text-embedding-3-small")
-        embedder_dims = int(os.getenv("MEM0_EMBEDDER_DIMS", "1536"))
+
 
         config["embedder"] = {
             "provider": "openai",
