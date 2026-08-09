@@ -18,6 +18,8 @@ scratch/
 tests/
 test_*.py
 scratch_*.py
+test_mem0_db*/
+upload*.py
 *.docx
 *.mp3
 *.json
