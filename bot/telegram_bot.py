@@ -5,6 +5,7 @@ import logging
 import os
 import io
 import json
+from typing import Any
 
 from uuid import uuid4
 from telegram import BotCommandScopeAllGroupChats, Update, constants
@@ -25,6 +26,10 @@ from openai_helper import OpenAIHelper, localized_text
 from usage_tracker import UsageTracker
 from document_parser import parse_document
 from video_helper import VideoIntelligenceHelper
+try:
+    from media_group import MediaGroupCollector
+except ImportError:
+    from bot.media_group import MediaGroupCollector
 
 
 class ChatGPTTelegramBot:
@@ -41,6 +46,7 @@ class ChatGPTTelegramBot:
         self.config = config
         self.openai = openai
         self.video_helper = VideoIntelligenceHelper()
+        self.media_group_collector = MediaGroupCollector(debounce_seconds=0.8, on_complete=self._handle_media_group_image)
         bot_language = self.config['bot_language']
         self.commands = [
             BotCommand(command='start', description=localized_text('help_description', bot_language)),
@@ -210,15 +216,244 @@ class ChatGPTTelegramBot:
             text=localized_text('reset_done', self.config['bot_language'])
         )
 
+    def _extract_photo_or_image(self, msg: Any) -> Any:
+        if not msg:
+            return None
+        photo = getattr(msg, 'photo', None)
+        if isinstance(photo, (list, tuple)) and len(photo) > 0:
+            return photo[-1]
+        elif photo is not None and isinstance(getattr(photo, 'file_id', None), str):
+            return photo
+
+        doc = getattr(msg, 'document', None)
+        if doc is not None:
+            file_id = getattr(doc, 'file_id', None)
+            if isinstance(file_id, str):
+                mime = getattr(doc, 'mime_type', '')
+                mime = mime.lower() if isinstance(mime, str) else ''
+                file_name = getattr(doc, 'file_name', '')
+                file_name = file_name.lower() if isinstance(file_name, str) else ''
+                if mime.startswith('image/') or file_name.endswith(('.png', '.jpg', '.jpeg', '.webp', '.bmp')):
+                    return doc
+            return None
+
+        att = getattr(msg, 'effective_attachment', None)
+        if att is not None:
+            target = att[-1] if isinstance(att, (list, tuple)) and len(att) > 0 else att
+            if target is not None:
+                file_id = getattr(target, 'file_id', None)
+                if isinstance(file_id, str):
+                    mime = getattr(target, 'mime_type', '')
+                    mime = mime.lower() if isinstance(mime, str) else ''
+                    file_name = getattr(target, 'file_name', '')
+                    file_name = file_name.lower() if isinstance(file_name, str) else ''
+                    if mime or file_name:
+                        if mime.startswith('image/') or file_name.endswith(('.png', '.jpg', '.jpeg', '.webp', '.bmp')):
+                            return target
+                        return None
+                    return target
+
+        return None
+
+    async def _download_photo_as_png(self, bot: Any, photo_or_doc: Any) -> io.BytesIO:
+        """
+        Downloads a photo or document attachment from Telegram and converts it to a PNG BytesIO.
+        """
+        file_id = None
+        if isinstance(photo_or_doc, str):
+            file_id = photo_or_doc
+        elif isinstance(photo_or_doc, (list, tuple)) and len(photo_or_doc) > 0:
+            file_id = getattr(photo_or_doc[-1], 'file_id', None)
+        elif hasattr(photo_or_doc, 'file_id'):
+            file_id = photo_or_doc.file_id
+        elif hasattr(photo_or_doc, 'photo') and photo_or_doc.photo:
+            p = photo_or_doc.photo
+            file_id = p[-1].file_id if isinstance(p, (list, tuple)) else getattr(p, 'file_id', None)
+        elif hasattr(photo_or_doc, 'document') and photo_or_doc.document:
+            file_id = getattr(photo_or_doc.document, 'file_id', None)
+        elif hasattr(photo_or_doc, 'effective_attachment') and photo_or_doc.effective_attachment:
+            att = photo_or_doc.effective_attachment
+            if isinstance(att, (list, tuple)) and len(att) > 0:
+                file_id = getattr(att[-1], 'file_id', None)
+            else:
+                file_id = getattr(att, 'file_id', None)
+
+        if not file_id:
+            raise ValueError("No file_id found for photo or image document")
+
+        # Resolve bot object if a context-like object is passed
+        actual_bot = bot
+        if hasattr(bot, 'bot') and not hasattr(bot, 'get_file'):
+            actual_bot = bot.bot
+
+        media_file = await actual_bot.get_file(file_id)
+        byte_array = await media_file.download_as_bytearray()
+        temp_file = io.BytesIO(byte_array)
+        with Image.open(temp_file) as original_image:
+            temp_file_png = io.BytesIO()
+            original_image.save(temp_file_png, format='PNG')
+            temp_file_png.seek(0)
+            return temp_file_png
+
+    async def _handle_media_group_image(self, group: dict[str, Any]):
+        """
+        Handles image generation for a collected media group (album) when caption starts with /image.
+        """
+        caption = group.get('caption') or ''
+        if not caption.lower().startswith('/image'):
+            return
+
+        if not self.config.get('enable_image_generation', False):
+            return
+
+        primary_message = group.get('primary_message')
+        if not primary_message:
+            return
+
+        tokens = caption.split(None, 1)
+        image_query = tokens[1].strip() if len(tokens) > 1 else ''
+
+        if image_query == '':
+            try:
+                await primary_message.reply_text(
+                    text=localized_text('image_no_prompt', self.config['bot_language'])
+                )
+            except Exception as e:
+                logging.exception(e)
+            return
+
+        # Get bot instance from update or message
+        bot = None
+        updates = group.get('updates', [])
+        if updates and hasattr(updates[0], 'get_bot'):
+            try:
+                bot = updates[0].get_bot()
+            except Exception:
+                pass
+        if not bot and updates and hasattr(updates[0], '_bot'):
+            bot = updates[0]._bot
+        if not bot and hasattr(primary_message, 'get_bot'):
+            try:
+                bot = primary_message.get_bot()
+            except Exception:
+                pass
+        if not bot and hasattr(primary_message, '_bot'):
+            bot = primary_message._bot
+
+        reference_images: list[io.BytesIO] = []
+        try:
+            for msg in group.get('messages', []):
+                att = self._extract_photo_or_image(msg)
+                if att:
+                    img_buf = await self._download_photo_as_png(bot, att)
+                    reference_images.append(img_buf)
+        except Exception as e:
+            logging.exception(f"Failed to download album reference images: {e}")
+
+        try:
+            await primary_message.reply_chat_action(action=constants.ChatAction.UPLOAD_PHOTO)
+        except Exception:
+            pass
+
+        try:
+            image_url, image_size = await self.openai.generate_image(
+                prompt=image_query,
+                reference_images=reference_images if reference_images else None
+            )
+            if self.config.get('image_receive_mode', 'photo') == 'photo':
+                await primary_message.reply_photo(photo=image_url)
+            elif self.config.get('image_receive_mode', 'photo') == 'document':
+                await primary_message.reply_document(document=image_url)
+            else:
+                await primary_message.reply_photo(photo=image_url)
+
+            user_id = primary_message.from_user.id
+            if user_id not in self.usage:
+                self.usage[user_id] = UsageTracker(user_id, primary_message.from_user.name)
+            self.usage[user_id].add_image_request(image_size, self.config['image_prices'])
+            if str(user_id) not in self.config['allowed_user_ids'].split(',') and 'guests' in self.usage:
+                self.usage["guests"].add_image_request(image_size, self.config['image_prices'])
+
+        except Exception as e:
+            logging.exception(e)
+            try:
+                await primary_message.reply_text(
+                    text=f"{localized_text('image_fail', self.config['bot_language'])}: {str(e)}",
+                    parse_mode=constants.ParseMode.MARKDOWN
+                )
+            except Exception:
+                try:
+                    await primary_message.reply_text(
+                        text=f"{localized_text('image_fail', self.config['bot_language'])}: {str(e)}"
+                    )
+                except Exception:
+                    pass
+
     async def image(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
-        Generates an image for the given prompt using DALL·E APIs
+        Generates an image for the given prompt using DALL·E APIs, optionally using reference images.
         """
         if not self.config['enable_image_generation'] \
                 or not await self.check_allowed_and_within_budget(update, context):
             return
 
-        image_query = message_text(update.message)
+        raw_text = ''
+        if update.message:
+            if isinstance(getattr(update.message, 'text', None), str):
+                raw_text = update.message.text
+            elif isinstance(getattr(update.message, 'caption', None), str):
+                raw_text = update.message.caption
+            elif getattr(update.message, 'text', None) is not None and isinstance(update.message.text, str):
+                raw_text = str(update.message.text)
+            elif getattr(update.message, 'caption', None) is not None and isinstance(update.message.caption, str):
+                raw_text = str(update.message.caption)
+
+        image_query = ''
+        if raw_text:
+            tokens = raw_text.split(None, 1)
+            if tokens and tokens[0].lower().startswith('/image'):
+                image_query = tokens[1].strip() if len(tokens) > 1 else ''
+            else:
+                try:
+                    image_query = message_text(update.message)
+                except Exception:
+                    image_query = raw_text.strip()
+
+        # Collect reference images
+        reference_images: list[io.BytesIO] = []
+        try:
+            # 1. Check if replying to a photo/document or album
+            reply_msg = getattr(update.message, 'reply_to_message', None) if update.message else None
+            if reply_msg:
+                reply_mg_id = getattr(reply_msg, 'media_group_id', None)
+                if reply_mg_id:
+                    cached_group = self.media_group_collector.get_cached_group(reply_mg_id)
+                    if cached_group and cached_group.get('messages'):
+                        for m in cached_group['messages']:
+                            att = self._extract_photo_or_image(m)
+                            if att:
+                                img_buf = await self._download_photo_as_png(context.bot, att)
+                                reference_images.append(img_buf)
+                    else:
+                        att = self._extract_photo_or_image(reply_msg)
+                        if att:
+                            img_buf = await self._download_photo_as_png(context.bot, att)
+                            reference_images.append(img_buf)
+                else:
+                    att = self._extract_photo_or_image(reply_msg)
+                    if att:
+                        img_buf = await self._download_photo_as_png(context.bot, att)
+                        reference_images.append(img_buf)
+
+            # 2. Check if current message itself has photo/document
+            if update.message:
+                current_att = self._extract_photo_or_image(update.message)
+                if current_att:
+                    img_buf = await self._download_photo_as_png(context.bot, current_att)
+                    reference_images.append(img_buf)
+        except Exception as e:
+            logging.exception(f"Failed to process reference images: {e}")
+
         if image_query == '':
             await update.effective_message.reply_text(
                 message_thread_id=get_thread_id(update),
@@ -231,7 +466,10 @@ class ChatGPTTelegramBot:
 
         async def _generate():
             try:
-                image_url, image_size = await self.openai.generate_image(prompt=image_query)
+                image_url, image_size = await self.openai.generate_image(
+                    prompt=image_query,
+                    reference_images=reference_images if reference_images else None
+                )
                 if self.config['image_receive_mode'] == 'photo':
                     await update.effective_message.reply_photo(
                         reply_to_message_id=get_reply_to_message_id(self.config, update),
@@ -246,6 +484,8 @@ class ChatGPTTelegramBot:
                     raise Exception(f"env variable IMAGE_RECEIVE_MODE has invalid value {self.config['image_receive_mode']}")
                 # add image request to users usage tracker
                 user_id = update.message.from_user.id
+                if user_id not in self.usage:
+                    self.usage[user_id] = UsageTracker(user_id, update.message.from_user.name)
                 self.usage[user_id].add_image_request(image_size, self.config['image_prices'])
                 # add guest chat request to guest usage tracker
                 if str(user_id) not in self.config['allowed_user_ids'].split(',') and 'guests' in self.usage:
@@ -485,9 +725,30 @@ class ChatGPTTelegramBot:
 
     async def vision(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
-        Interpret image using vision model.
+        Interpret image using vision model or generate image if caption is /image.
         """
-        if not self.config['enable_vision'] or not await self.check_allowed_and_within_budget(update, context):
+        if not await self.check_allowed_and_within_budget(update, context):
+            return
+
+        caption = update.message.caption if update.message else None
+        media_group_id = getattr(update.message, 'media_group_id', None) if update.message else None
+
+        # Check if caption starts with /image (case-insensitive)
+        if caption and caption.lower().startswith('/image'):
+            if not self.config.get('enable_image_generation', False):
+                return
+            if media_group_id:
+                await self.media_group_collector.add_update(update)
+                return
+            else:
+                return await self.image(update, context)
+
+        # If caption does NOT start with /image, but message has media_group_id that is already active
+        if media_group_id and media_group_id in self.media_group_collector.active_groups:
+            await self.media_group_collector.add_update(update)
+            return
+
+        if not self.config['enable_vision']:
             return
 
         chat_id = update.effective_chat.id

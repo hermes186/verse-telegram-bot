@@ -545,38 +545,73 @@ class OpenAIHelper:
         )
         return await self.__handle_function_call(chat_id, response, stream, times + 1, plugins_used)
 
-    async def generate_image(self, prompt: str) -> tuple[str, str]:
+    async def generate_image(self, prompt: str, reference_images: list[io.BytesIO] | None = None) -> tuple[str | io.BytesIO, str]:
         """
-        Generates an image from the given prompt using DALL·E or OpenAI compatible image model.
+        Generates an image from the given prompt (and optional reference images)
+        using DALL·E, gpt-image-2, or OpenAI-compatible image models.
         :param prompt: The prompt to send to the model
-        :return: The image URL and the image size
+        :param reference_images: Optional list of PNG BytesIO objects as reference images
+        :return: The image URL/buffer and the image size
         """
         bot_language = self.config['bot_language']
         try:
-            gen_kwargs = {
-                'prompt': prompt,
-                'n': 1,
-                'model': self.config['image_model'],
-                'size': self.config['image_size']
-            }
-            if self.config.get('image_quality') in ('standard', 'hd'):
-                gen_kwargs['quality'] = self.config['image_quality']
-            if self.config.get('image_style') in ('vivid', 'natural'):
-                gen_kwargs['style'] = self.config['image_style']
+            model = self.config.get('image_model', 'gpt-image-2')
+            size = self.config.get('image_size', '1024x1024')
 
-            try:
-                response = await self.image_client.images.generate(**gen_kwargs)
-            except Exception as e:
-                if 'quality' in gen_kwargs or 'style' in gen_kwargs:
-                    logging.warning(f"Image generation failed with parameters ({e}). Retrying with basic parameters...")
-                    gen_kwargs.pop('quality', None)
-                    gen_kwargs.pop('style', None)
-                    response = await self.image_client.images.generate(**gen_kwargs)
+            if reference_images and len(reference_images) > 0:
+                edit_kwargs = {
+                    'model': model,
+                    'prompt': prompt,
+                    'size': size,
+                }
+                if len(reference_images) == 1:
+                    ref = reference_images[0]
+                    ref.seek(0)
+                    edit_kwargs['image'] = ('image.png', ref.read(), 'image/png')
                 else:
-                    raise e
+                    files = []
+                    for i, ref in enumerate(reference_images):
+                        ref.seek(0)
+                        files.append((f'image_{i}.png', ref.read(), 'image/png'))
+                    edit_kwargs['image'] = files
+
+                if self.config.get('image_quality') in ('standard', 'hd', 'high', 'low', 'medium'):
+                    edit_kwargs['quality'] = self.config['image_quality']
+
+                try:
+                    response = await self.image_client.images.edit(**edit_kwargs)
+                except Exception as e:
+                    if 'quality' in edit_kwargs:
+                        logging.warning(f"Image edit failed with quality ({e}). Retrying without quality parameter...")
+                        edit_kwargs.pop('quality', None)
+                        response = await self.image_client.images.edit(**edit_kwargs)
+                    else:
+                        raise e
+            else:
+                gen_kwargs = {
+                    'prompt': prompt,
+                    'n': 1,
+                    'model': model,
+                    'size': size
+                }
+                if self.config.get('image_quality') in ('standard', 'hd'):
+                    gen_kwargs['quality'] = self.config['image_quality']
+                if self.config.get('image_style') in ('vivid', 'natural'):
+                    gen_kwargs['style'] = self.config['image_style']
+
+                try:
+                    response = await self.image_client.images.generate(**gen_kwargs)
+                except Exception as e:
+                    if 'quality' in gen_kwargs or 'style' in gen_kwargs:
+                        logging.warning(f"Image generation failed with parameters ({e}). Retrying with basic parameters...")
+                        gen_kwargs.pop('quality', None)
+                        gen_kwargs.pop('style', None)
+                        response = await self.image_client.images.generate(**gen_kwargs)
+                    else:
+                        raise e
 
             if not response.data or len(response.data) == 0:
-                logging.error(f'No response from GPT: {str(response)}')
+                logging.error(f'No response from image model: {str(response)}')
                 raise Exception(
                     f"⚠️ _{localized_text('error', bot_language)}._ "
                     f"⚠️\n{localized_text('try_again', bot_language)}."
@@ -585,18 +620,18 @@ class OpenAIHelper:
             item = response.data[0]
             if hasattr(item, 'url') and item.url:
                 if item.url.startswith('http://') or item.url.startswith('https://'):
-                    return item.url, self.config['image_size']
+                    return item.url, size
                 elif item.url.startswith('data:image'):
                     header, base64_data = item.url.split(',', 1)
                     img_bytes = base64.b64decode(base64_data)
                     buf = io.BytesIO(img_bytes)
                     buf.name = 'image.png'
-                    return buf, self.config['image_size']
+                    return buf, size
             if hasattr(item, 'b64_json') and item.b64_json:
                 img_bytes = base64.b64decode(item.b64_json)
                 buf = io.BytesIO(img_bytes)
                 buf.name = 'image.png'
-                return buf, self.config['image_size']
+                return buf, size
 
             raise Exception(f"No photo in response from model: {item}")
         except Exception as e:

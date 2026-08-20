@@ -90,12 +90,21 @@ async def wrap_with_indicator(update: Update, context: CallbackContext, coroutin
     """
     Wraps a coroutine while repeatedly sending a chat action to the user.
     """
-    task = context.application.create_task(coroutine(), update=update)
+    coro = coroutine()
+    try:
+        task = context.application.create_task(coro, update=update)
+    except Exception:
+        task = None
+    if not hasattr(task, '__await__') or not hasattr(task, 'done') or not hasattr(task, 'cancel'):
+        task = asyncio.create_task(coro)
     while not task.done():
         if not is_inline:
-            context.application.create_task(
-                update.effective_chat.send_action(chat_action, message_thread_id=get_thread_id(update))
-            )
+            try:
+                context.application.create_task(
+                    update.effective_chat.send_action(chat_action, message_thread_id=get_thread_id(update))
+                )
+            except Exception:
+                pass
         try:
             await asyncio.wait_for(asyncio.shield(task), 4.5)
         except asyncio.TimeoutError:
@@ -398,6 +407,7 @@ def encode_image(fileobj):
     return f'data:image/jpeg;base64,{image}'
 
 
-def decode_image(imgbase64):
-    image = imgbase64[len('data:image/jpeg;base64,'):]
-    return base64.b64decode(image)
+def decode_image(imgbase64: str) -> bytes:
+    if ',' in imgbase64:
+        imgbase64 = imgbase64.split(',', 1)[1]
+    return base64.b64decode(imgbase64)
