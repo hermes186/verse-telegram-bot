@@ -5,6 +5,7 @@ import itertools
 import json
 import logging
 import os
+import re
 import base64
 
 import telegram
@@ -411,3 +412,53 @@ def decode_image(imgbase64: str) -> bytes:
     if ',' in imgbase64:
         imgbase64 = imgbase64.split(',', 1)[1]
     return base64.b64decode(imgbase64)
+
+
+def parse_image_args(raw_prompt: str) -> tuple[str, str | None]:
+    """
+    Parses aspect ratio or size flags from an image prompt.
+    Supports flags: --ar, -ar, --size, -s, --aspect, -aspect (case-insensitive).
+    Returns (cleaned_prompt, size_or_ar).
+    """
+    if not raw_prompt:
+        return '', None
+
+    pattern = r'(?i)(?:^|\s)(?:--ar|-ar|--size|-s|--aspect|-aspect)(?:\s+|=)([\w:/x]+)(?=\s|$)'
+    match = re.search(pattern, raw_prompt)
+    if match:
+        size_or_ar = match.group(1).strip()
+        cleaned_prompt = (raw_prompt[:match.start()] + raw_prompt[match.end():]).strip()
+        return cleaned_prompt, size_or_ar
+
+    return raw_prompt.strip(), None
+
+
+def resolve_image_size(size_or_ar: str | None, model: str = 'gpt-image-2', default_size: str = '1024x1024') -> str:
+    """
+    Resolves an aspect ratio string or resolution string into an exact image size (WxH).
+    """
+    val = (size_or_ar or default_size).lower().strip()
+    normalized_val = val.replace('/', ':').replace('x', ':')
+
+    landscape_ratios = {'16:9', '4:3', '3:2', '21:9', 'landscape', 'horizontal', 'wide', 'land'}
+    portrait_ratios = {'9:16', '3:4', '2:3', '9:21', 'portrait', 'vertical', 'tall', 'port'}
+    square_ratios = {'1:1', 'square', 'sq'}
+
+    # 1. Map aspect ratios to known resolutions
+    if normalized_val in landscape_ratios:
+        val = '1792x1024'
+    elif normalized_val in portrait_ratios:
+        val = '1024x1792'
+    elif normalized_val in square_ratios:
+        val = '1024x1024'
+
+    # 2. Validate dall-e-2 constraints (handles both explicit sizes and resolved ratios)
+    if 'dall-e-2' in model:
+        fallback = default_size if default_size in ('256x256', '512x512', '1024x1024') else '1024x1024'
+        return val if val in ('256x256', '512x512', '1024x1024') else fallback
+
+    # 3. Fallback for valid explicit resolutions
+    if re.match(r'^\d+x\d+$', val):
+        return val
+
+    return default_size

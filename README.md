@@ -20,7 +20,7 @@ A [Telegram bot](https://core.telegram.org/bots/api) that integrates with OpenAI
 - [x] Typing indicator while generating a response
 - [x] Access can be restricted by specifying a list of allowed users
 - [x] Docker and Proxy support
-- [x] Image generation using DALL·E via the `/image` command
+- [x] Image generation using DALL·E / `gpt-image-2` via `/image` command with aspect ratio support (e.g. `/image a cat --ar 16:9`, `--ar 9:16`, `--ar 1:1` or `--size 1792x1024`)
 - [x] Transcribe audio and video messages using Whisper (may require [ffmpeg](https://ffmpeg.org))
 - [x] Automatic conversation summary to avoid excessive token usage
 - [x] Track token usage per user - by [@AlexHTW](https://github.com/AlexHTW)

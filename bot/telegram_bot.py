@@ -21,7 +21,7 @@ from PIL import Image
 from utils import is_group_chat, get_thread_id, message_text, wrap_with_indicator, split_into_chunks, \
     edit_message_with_retry, get_stream_cutoff_values, is_allowed, get_remaining_budget, is_admin, is_within_budget, \
     get_reply_to_message_id, add_chat_request_to_usage_tracker, error_handler, is_direct_result, handle_direct_result, \
-    cleanup_intermediate_files
+    cleanup_intermediate_files, parse_image_args, resolve_image_size
 from openai_helper import OpenAIHelper, localized_text
 from usage_tracker import UsageTracker
 from document_parser import parse_document
@@ -313,7 +313,14 @@ class ChatGPTTelegramBot:
         tokens = caption.split(None, 1)
         image_query = tokens[1].strip() if len(tokens) > 1 else ''
 
-        if image_query == '':
+        cleaned_prompt, raw_ar = parse_image_args(image_query)
+        target_size = resolve_image_size(
+            raw_ar,
+            model=self.config.get('image_model', 'gpt-image-2'),
+            default_size=self.config.get('image_size', '1024x1024')
+        )
+
+        if cleaned_prompt == '':
             try:
                 await primary_message.reply_text(
                     text=localized_text('image_no_prompt', self.config['bot_language'])
@@ -357,8 +364,9 @@ class ChatGPTTelegramBot:
 
         try:
             image_url, image_size = await self.openai.generate_image(
-                prompt=image_query,
-                reference_images=reference_images if reference_images else None
+                prompt=cleaned_prompt,
+                reference_images=reference_images if reference_images else None,
+                size=target_size
             )
             if self.config.get('image_receive_mode', 'photo') == 'photo':
                 await primary_message.reply_photo(photo=image_url)
@@ -454,7 +462,14 @@ class ChatGPTTelegramBot:
         except Exception as e:
             logging.exception(f"Failed to process reference images: {e}")
 
-        if image_query == '':
+        cleaned_prompt, raw_ar = parse_image_args(image_query)
+        target_size = resolve_image_size(
+            raw_ar,
+            model=self.config.get('image_model', 'gpt-image-2'),
+            default_size=self.config.get('image_size', '1024x1024')
+        )
+
+        if cleaned_prompt == '':
             await update.effective_message.reply_text(
                 message_thread_id=get_thread_id(update),
                 text=localized_text('image_no_prompt', self.config['bot_language'])
@@ -462,13 +477,14 @@ class ChatGPTTelegramBot:
             return
 
         logging.info(f'New image generation request received from user {update.message.from_user.name} '
-                     f'(id: {update.message.from_user.id})')
+                     f'(id: {update.message.from_user.id}) - size: {target_size}')
 
         async def _generate():
             try:
                 image_url, image_size = await self.openai.generate_image(
-                    prompt=image_query,
-                    reference_images=reference_images if reference_images else None
+                    prompt=cleaned_prompt,
+                    reference_images=reference_images if reference_images else None,
+                    size=target_size
                 )
                 if self.config['image_receive_mode'] == 'photo':
                     await update.effective_message.reply_photo(

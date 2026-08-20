@@ -120,8 +120,16 @@ class UsageTracker:
                              defaults to [0.016, 0.018, 0.02]
         """
         sizes = ["256x256", "512x512", "1024x1024"]
-        requested_size = sizes.index(image_size)
-        image_cost = image_prices[requested_size]
+        if isinstance(image_prices, str):
+            image_prices = [float(p) for p in image_prices.split(',')]
+
+        if image_size in sizes:
+            requested_size = sizes.index(image_size)
+        else:
+            # Map non-square/large sizes (e.g. 1792x1024, 1024x1792) to 1024x1024 tier
+            requested_size = 2 if len(sizes) > 2 else 0
+
+        image_cost = image_prices[requested_size] if requested_size < len(image_prices) else 0.02
         today = date.today()
         self.add_current_costs(image_cost)
 

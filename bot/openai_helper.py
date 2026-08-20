@@ -545,24 +545,25 @@ class OpenAIHelper:
         )
         return await self.__handle_function_call(chat_id, response, stream, times + 1, plugins_used)
 
-    async def generate_image(self, prompt: str, reference_images: list[io.BytesIO] | None = None) -> tuple[str | io.BytesIO, str]:
+    async def generate_image(self, prompt: str, reference_images: list[io.BytesIO] | None = None, size: str | None = None) -> tuple[str | io.BytesIO, str]:
         """
         Generates an image from the given prompt (and optional reference images)
         using DALL·E, gpt-image-2, or OpenAI-compatible image models.
         :param prompt: The prompt to send to the model
         :param reference_images: Optional list of PNG BytesIO objects as reference images
+        :param size: Optional image size/resolution (e.g. '1024x1024', '1792x1024', '1024x1792')
         :return: The image URL/buffer and the image size
         """
         bot_language = self.config['bot_language']
         try:
             model = self.config.get('image_model', 'gpt-image-2')
-            size = self.config.get('image_size', '1024x1024')
+            actual_size = size or self.config.get('image_size', '1024x1024')
 
             if reference_images and len(reference_images) > 0:
                 edit_kwargs = {
                     'model': model,
                     'prompt': prompt,
-                    'size': size,
+                    'size': actual_size,
                 }
                 if len(reference_images) == 1:
                     ref = reference_images[0]
@@ -592,7 +593,7 @@ class OpenAIHelper:
                     'prompt': prompt,
                     'n': 1,
                     'model': model,
-                    'size': size
+                    'size': actual_size
                 }
                 if self.config.get('image_quality') in ('standard', 'hd'):
                     gen_kwargs['quality'] = self.config['image_quality']
@@ -620,18 +621,18 @@ class OpenAIHelper:
             item = response.data[0]
             if hasattr(item, 'url') and item.url:
                 if item.url.startswith('http://') or item.url.startswith('https://'):
-                    return item.url, size
+                    return item.url, actual_size
                 elif item.url.startswith('data:image'):
                     header, base64_data = item.url.split(',', 1)
                     img_bytes = base64.b64decode(base64_data)
                     buf = io.BytesIO(img_bytes)
                     buf.name = 'image.png'
-                    return buf, size
+                    return buf, actual_size
             if hasattr(item, 'b64_json') and item.b64_json:
                 img_bytes = base64.b64decode(item.b64_json)
                 buf = io.BytesIO(img_bytes)
                 buf.name = 'image.png'
-                return buf, size
+                return buf, actual_size
 
             raise Exception(f"No photo in response from model: {item}")
         except Exception as e:
