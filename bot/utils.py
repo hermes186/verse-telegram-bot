@@ -423,11 +423,12 @@ def parse_image_args(raw_prompt: str) -> tuple[str, str | None]:
     if not raw_prompt:
         return '', None
 
-    pattern = r'(?i)(?:^|\s)(?:--ar|-ar|--size|-s|--aspect|-aspect)(?:\s+|=)([\w:/x：]+)(?=\s|$)'
+    pattern = r'(?i)(?<![a-zA-Z0-9_-])(?:--ar|-ar|--size|-s|--aspect|-aspect)(?:\s+|=)([\w:/x：]+)(?=\s|$)'
     match = re.search(pattern, raw_prompt)
     if match:
         size_or_ar = match.group(1).strip()
-        cleaned_prompt = (raw_prompt[:match.start()] + raw_prompt[match.end():]).strip()
+        cleaned_prompt = (raw_prompt[:match.start()] + ' ' + raw_prompt[match.end():]).strip()
+        cleaned_prompt = re.sub(r'\s+', ' ', cleaned_prompt)
         return cleaned_prompt, size_or_ar
 
     return raw_prompt.strip(), None
