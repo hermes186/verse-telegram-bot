@@ -423,7 +423,7 @@ def parse_image_args(raw_prompt: str) -> tuple[str, str | None]:
     if not raw_prompt:
         return '', None
 
-    pattern = r'(?i)(?:^|\s)(?:--ar|-ar|--size|-s|--aspect|-aspect)(?:\s+|=)([\w:/x]+)(?=\s|$)'
+    pattern = r'(?i)(?:^|\s)(?:--ar|-ar|--size|-s|--aspect|-aspect)(?:\s+|=)([\w:/x：]+)(?=\s|$)'
     match = re.search(pattern, raw_prompt)
     if match:
         size_or_ar = match.group(1).strip()
@@ -438,7 +438,7 @@ def resolve_image_size(size_or_ar: str | None, model: str = 'gpt-image-2', defau
     Resolves an aspect ratio string or resolution string into an exact image size (WxH).
     """
     val = (size_or_ar or default_size).lower().strip()
-    normalized_val = val.replace('/', ':').replace('x', ':')
+    normalized_val = val.replace('/', ':').replace('x', ':').replace('：', ':')
 
     landscape_ratios = {'16:9', '4:3', '3:2', '21:9', 'landscape', 'horizontal', 'wide', 'land'}
     portrait_ratios = {'9:16', '3:4', '2:3', '9:21', 'portrait', 'vertical', 'tall', 'port'}
