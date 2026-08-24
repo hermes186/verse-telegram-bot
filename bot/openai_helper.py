@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import datetime
 import logging
 import os
@@ -412,7 +413,10 @@ class OpenAIHelper:
             if exceeded_max_tokens or exceeded_max_history_size:
                 logging.info(f'Chat history for chat ID {chat_id} is too long. Summarising...')
                 try:
-                    summary = await self.__summarise(self.conversations[chat_id][:-1], chat_id=chat_id)
+                    summary = await self.__summarise(
+                        self.__strip_images_from_history(self.conversations[chat_id][:-1]),
+                        chat_id=chat_id
+                    )
                     logging.debug(f'Summary: {summary}')
                     self.reset_chat_history(chat_id, self.conversations[chat_id][0]['content'])
                     self.__add_to_history(chat_id, role="assistant", content=summary)
@@ -754,6 +758,28 @@ class OpenAIHelper:
             if self.config['enable_vision_follow_up_questions']:
                 self.conversations_vision[chat_id] = True
                 self.__add_to_history(chat_id, role="user", content=content)
+
+                # Cap the number of image-bearing messages to avoid unbounded
+                # memory growth and ever-slower token-counting passes.
+                max_vision_history = self.config.get('max_vision_history', 4)
+                history = self.conversations[chat_id]
+                image_msg_indices = [
+                    i for i, m in enumerate(history)
+                    if isinstance(m.get('content'), list)
+                    and any(
+                        isinstance(p, dict) and p.get('type') == 'image_url'
+                        for p in m['content']
+                    )
+                ]
+                while len(image_msg_indices) > max_vision_history:
+                    oldest_idx = image_msg_indices.pop(0)
+                    # Replace image payload with a lightweight placeholder so
+                    # conversation context is preserved without the base64 blob.
+                    history[oldest_idx]['content'] = '[earlier image — removed to save context]'
+                    logging.debug(
+                        f'Pruned oldest vision image from history for chat {chat_id} '
+                        f'(keeping {max_vision_history} images max)'
+                    )
             else:
                 for message in content:
                     if message['type'] == 'text':
@@ -771,7 +797,9 @@ class OpenAIHelper:
                 try:
                     
                     last = self.conversations[chat_id][-1]
-                    summary = await self.__summarise(self.conversations[chat_id][:-1])
+                    summary = await self.__summarise(
+                        self.__strip_images_from_history(self.conversations[chat_id][:-1])
+                    )
                     logging.debug(f'Summary: {summary}')
                     self.reset_chat_history(chat_id, self.conversations[chat_id][0]['content'])
                     self.__add_to_history(chat_id, role="assistant", content=summary)
@@ -802,7 +830,11 @@ class OpenAIHelper:
             #     if len(functions) > 0:
             #         common_args['functions'] = self.plugin_manager.get_functions_specs()
             client = self.client
-            return await client.chat.completions.create(**common_args)
+            timeout = self.config.get('vision_request_timeout', 120)
+            return await asyncio.wait_for(
+                client.chat.completions.create(**common_args),
+                timeout=timeout
+            )
 
         except (openai.RateLimitError, openai.InternalServerError, openai.APIConnectionError, openai.APITimeoutError) as e:
             raise e
@@ -957,6 +989,31 @@ class OpenAIHelper:
         """
         self.conversations[chat_id].append({"role": role, "content": content})
 
+    def __strip_images_from_history(self, conversation: list) -> list:
+        """
+        Return a copy of *conversation* with every base64 image_url payload
+        replaced by a short ``[image]`` text placeholder.
+
+        This must be called before passing history to :meth:`__summarise` or
+        any other code path that serialises the conversation as plain text,
+        because raw base64 blobs can be many megabytes and will cause the API
+        request to time out or be rejected.
+        """
+        stripped = []
+        for msg in conversation:
+            content = msg.get('content')
+            if isinstance(content, list):
+                new_content = []
+                for item in content:
+                    if isinstance(item, dict) and item.get('type') == 'image_url':
+                        new_content.append({'type': 'text', 'text': '[image]'})
+                    else:
+                        new_content.append(item)
+                stripped.append({**msg, 'content': new_content})
+            else:
+                stripped.append(msg)
+        return stripped
+
     async def __summarise(self, conversation, chat_id=None) -> str:
         """
         Summarises the conversation history.
@@ -1030,8 +1087,24 @@ class OpenAIHelper:
                             if not isinstance(message1, dict):
                                 continue
                             if message1.get('type') == 'image_url':
-                                image = decode_image(message1['image_url']['url'])
-                                num_tokens += self.__count_tokens_vision(image)
+                                # Fast path: estimate token cost from base64 string length
+                                # without decoding the image, to avoid CPU spikes when
+                                # many images are stored in history.
+                                b64_str = message1['image_url']['url']
+                                detail = self.config.get('vision_detail', 'auto')
+                                if detail == 'low':
+                                    num_tokens += 85
+                                else:
+                                    # Approximate raw byte count from base64 length
+                                    approx_bytes = len(b64_str) * 3 // 4
+                                    # Rough pixel estimate (assume RGB, 3 bytes/pixel)
+                                    approx_pixels = max(1, approx_bytes // 3)
+                                    approx_side = int(approx_pixels ** 0.5)
+                                    # Clamp to OpenAI vision resize limits (768×2048)
+                                    clamped = min(approx_side, 768)
+                                    tw = max(1, (clamped + 511) // 512)
+                                    th = max(1, (min(approx_side, 2048) + 511) // 512)
+                                    num_tokens += 85 + tw * th * 170
                             elif message1.get('type') == 'text' and isinstance(message1.get('text'), str):
                                 num_tokens += len(encoding.encode(message1['text']))
                     # None (tool_calls messages) - skip
