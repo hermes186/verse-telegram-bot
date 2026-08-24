@@ -918,13 +918,22 @@ class OpenAIHelper:
         #         return
 
         answer = ''
-        async for chunk in response:
-            if len(chunk.choices) == 0:
-                continue
-            delta = chunk.choices[0].delta
-            if delta.content:
-                answer += delta.content
-                yield answer, 'not_finished'
+        stream_timeout = self.config.get('vision_stream_timeout', 120)
+        try:
+            async with asyncio.timeout(stream_timeout):
+                async for chunk in response:
+                    if len(chunk.choices) == 0:
+                        continue
+                    delta = chunk.choices[0].delta
+                    if delta.content:
+                        answer += delta.content
+                        yield answer, 'not_finished'
+        except asyncio.TimeoutError:
+            logging.warning(
+                f'Vision stream timed out for chat {chat_id} after {stream_timeout}s'
+            )
+            if not answer:
+                yield '⚠️ 请求超时，请稍后重试。', 'not_finished'
         answer = answer.strip()
         self.__add_to_history(chat_id, role="assistant", content=answer)
         tokens_used = str(self.__count_tokens(self.conversations[chat_id]))
