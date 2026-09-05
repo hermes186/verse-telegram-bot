@@ -1,28 +1,41 @@
-__pycache__
-/.idea
+# Environment & Secrets (NEVER commit secrets!)
 .env
-.DS_Store
-__pycache__
-/.idea
-.env
-.DS_Store
-/usage_logs
-venv
-/.cache
-user_memories.json
-scratch/
+.env.*
+!.env.example
+*.key
+*.pem
+*.json
+!translations.json
 
-# Antigravity and Agent Artifacts
-.learnings/
+# Python bytecode & environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+/.cache
+
+# IDE & OS files
+.idea/
+/.idea
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime data & Local storage
+/usage_logs/
+user_memories.json
+mem0_db/
+test_mem0_db*/
 scratch/
+.learnings/
+
+# Temporary and test artifacts
 tests/
 test_*.py
 scratch_*.py
-test_mem0_db*/
 upload*.py
 *.docx
 *.mp3
-*.json
-!translations.json
-mem0_db/
-
