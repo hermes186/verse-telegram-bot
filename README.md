@@ -1,245 +1,656 @@
-# ChatGPT Telegram Bot
-![python-version](https://img.shields.io/badge/python-3.9-blue.svg)
-[![openai-version](https://img.shields.io/badge/openai-1.58.1-orange.svg)](https://openai.com/)
-[![license](https://img.shields.io/badge/License-GPL%202.0-brightgreen.svg)](LICENSE)
-[![Publish Docker image](https://github.com/n3d1117/chatgpt-telegram-bot/actions/workflows/publish.yaml/badge.svg)](https://github.com/n3d1117/chatgpt-telegram-bot/actions/workflows/publish.yaml)
+# Verse Telegram Bot
 
-A [Telegram bot](https://core.telegram.org/bots/api) that integrates with OpenAI's _official_ [ChatGPT](https://openai.com/blog/chatgpt/), [DALL·E](https://openai.com/product/dall-e-2) and [Whisper](https://openai.com/research/whisper) APIs to provide answers. Ready to use with minimal configuration required.
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Telegram Bot API](https://img.shields.io/badge/Telegram%20Bot%20API-v21.9-2CA5E0.svg?logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
+[![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![OpenAI Compatible](https://img.shields.io/badge/API-OpenAI%20Compatible-412991.svg?logo=openai&logoColor=white)](https://platform.openai.com/)
 
-## Screenshots
+**English** | [简体中文](README_zh.md)
 
-### Demo
-![demo](https://user-images.githubusercontent.com/11541888/225114786-0d639854-b3e1-4214-b49a-e51ce8c40387.png)
+> 🚀 **Verse Telegram Bot** is a versatile, multi-modal, and fully decoupled AI assistant bot for personal and group chats on Telegram.
 
-### Plugins
-![plugins](https://github.com/n3d1117/chatgpt-telegram-bot/assets/11541888/83d5e0cd-e09a-463d-a292-722f919e929f)
+Based on the open-source project [n3d1117/chatgpt-telegram-bot](https://github.com/n3d1117/chatgpt-telegram-bot), Verse has undergone extensive architectural refactoring and production-grade feature expansions. It completely breaks free from single-provider vendor lock-in through standard protocol abstractions, seamlessly integrating **dynamic multi-model hot-switching**, **Mem0 long-term vectorized memory**, **real-time web search grounding**, **lifelike dual-engine TTS**, **aspect-ratio controlled image generation / image-to-image**, **native Office document parsing**, and **multi-dimensional video semantic intelligence**.
 
-## Features
-- [x] Support markdown in answers
-- [x] Reset conversation with the `/reset` command
-- [x] Typing indicator while generating a response
-- [x] Access can be restricted by specifying a list of allowed users
-- [x] Docker and Proxy support
-- [x] Image generation using DALL·E / `gpt-image-2` via `/image` command with aspect ratio support (e.g. `/image a cat --ar 16:9`, `--ar 9:16`, `--ar 1:1` or `--size 1792x1024`)
-- [x] Transcribe audio and video messages using Whisper (may require [ffmpeg](https://ffmpeg.org))
-- [x] Automatic conversation summary to avoid excessive token usage
-- [x] Track token usage per user - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] Get personal token usage statistics via the `/stats` command - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] User budgets and guest budgets - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] Stream support
-- [x] GPT-4 support
-  - If you have access to the GPT-4 API, simply change the `OPENAI_MODEL` parameter to `gpt-4`
-- [x] Localized bot language
-  - Available languages :brazil: :cn: :finland: :de: :indonesia: :iran: :it: :malaysia: :netherlands: :poland: :ru: :saudi_arabia: :es: :taiwan: :tr: :ukraine: :gb: :uzbekistan: :vietnam: :israel:
-- [x] Improved inline queries support for group and private chats - by [@bugfloyd](https://github.com/bugfloyd)
-  - To use this feature, enable inline queries for your bot in BotFather via the `/setinline` [command](https://core.telegram.org/bots/inline)
-- [x] Support *new models* [announced on June 13, 2023](https://openai.com/blog/function-calling-and-other-api-updates)
-- [x] Support *functions* (plugins) to extend the bot's functionality with 3rd party services
-  - Weather, Spotify, Web search, text-to-speech and more. See [here](#available-plugins) for a list of available plugins
-- [x] Support unofficial OpenAI-compatible APIs - by [@kristaller486](https://github.com/kristaller486)
-- [x] (NEW!) Support GPT-4 Turbo and DALL·E 3 [announced on November 6, 2023](https://openai.com/blog/new-models-and-developer-products-announced-at-devday) - by [@AlexHTW](https://github.com/AlexHTW)
-- [x] (NEW!) Text-to-speech support [announced on November 6, 2023](https://platform.openai.com/docs/guides/text-to-speech) - by [@gilcu3](https://github.com/gilcu3)
-- [x] (NEW!) Vision support [announced on November 6, 2023](https://platform.openai.com/docs/guides/vision) - by [@gilcu3](https://github.com/gilcu3)
-- [x] (NEW!) GPT-4o model support [announced on May 12, 2024](https://openai.com/index/hello-gpt-4o/) - by [@err09r](https://github.com/err09r)
-- [x] (NEW!) o1 and o1-mini model preliminary support
-- [x] (NEW!) Multi-reference image generation and `gpt-image-2` model support (upload multiple reference images via Telegram photo albums or reply to photo messages with `/image <prompt>`)
+---
 
-## Additional features - help needed!
-If you'd like to help, check out the [issues](https://github.com/n3d1117/chatgpt-telegram-bot/issues) section and contribute!  
-If you want to help with translations, check out the [Translations Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219)
+## Table of Contents
 
-PRs are always welcome!
+- [Project Overview & Core Features](#project-overview-core-features)
+- [System Architecture](#system-architecture)
+- [Feature Showcase & Demonstrations](#feature-showcase-demonstrations)
+  - [1. Core Conversation & UX](#1-core-conversation-ux)
+  - [2. Dynamic Multi-Model Hot-Switching](#2-dynamic-multi-model-hot-switching)
+  - [3. Real-Time Web Search & Source Citations](#3-real-time-web-search-source-citations)
+  - [4. Multimodal Image Generation & Reference Editing](#4-multimodal-image-generation-reference-editing)
+  - [5. Lifelike Dual-Engine TTS & Voice Matrix](#5-lifelike-dual-engine-tts-voice-matrix)
+  - [6. Whisper Speech Transcription & Video Intelligence](#6-whisper-speech-transcription-video-intelligence)
+  - [7. Mem0 Long-Term Vector Memory](#7-mem0-long-term-vector-memory)
+  - [8. Native Office Document Parsing](#8-native-office-document-parsing)
+  - [9. Access Control & Usage Budget Tracking](#9-access-control-usage-budget-tracking)
+- [Tech Stack & Project Structure](#tech-stack-project-structure)
+  - [Core Technology Matrix](#core-technology-matrix)
+  - [Project Tree](#project-tree)
+- [Quick Start: Step-by-Step Guide](#quick-start-step-by-step-guide)
+  - [Prerequisites: Obtaining Necessary Credentials](#prerequisites-obtaining-necessary-credentials)
+  - [Option 1: Local Development (Python Virtual Environment)](#option-1-local-development-python-virtual-environment)
+  - [Option 2: Local Containerization (Docker Compose)](#option-2-local-containerization-docker-compose)
+  - [Option 3: Linux VPS Production Deployment](#option-3-linux-vps-production-deployment)
+    - [Method A: Docker Compose Orchestration (Recommended)](#method-a-docker-compose-orchestration-recommended)
+    - [Method B: Native Systemd Daemon Service](#method-b-native-systemd-daemon-service)
+    - [Advanced Note: Polling vs Webhook Architecture](#advanced-note-polling-vs-webhook-architecture)
+- [Environment Variables Reference](#environment-variables-reference)
+- [Troubleshooting & FAQ](#troubleshooting-faq)
+- [Acknowledgements & License](#acknowledgements-license)
 
-## Prerequisites
-- Python 3.9+
-- A [Telegram bot](https://core.telegram.org/bots#6-botfather) and its token (see [tutorial](https://core.telegram.org/bots/tutorial#obtain-your-bot-token))
-- An [OpenAI](https://openai.com) account (see [configuration](#configuration) section)
+---
 
-## Getting started
+## Project Overview & Core Features
 
-### Configuration
-Customize the configuration by copying `.env.example` and renaming it to `.env`, then editing the required parameters as desired:
+Whether for power users seeking an all-in-one assistant or developer teams looking for a reliable, production-ready Telegram deployment, Verse delivers complete flexibility and resilience:
 
-| Parameter                   | Description                                                                                                                                                                                                                   |
-|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `OPENAI_API_KEY`            | Your OpenAI API key, you can get it from [here](https://platform.openai.com/account/api-keys)                                                                                                                                 |
-| `TELEGRAM_BOT_TOKEN`        | Your Telegram bot's token, obtained using [BotFather](http://t.me/botfather) (see [tutorial](https://core.telegram.org/bots/tutorial#obtain-your-bot-token))                                                                  |
-| `ADMIN_USER_IDS`            | Telegram user IDs of admins. These users have access to special admin commands, information and no budget restrictions. Admin IDs don't have to be added to `ALLOWED_TELEGRAM_USER_IDS`. **Note**: by default, no admin (`-`) |
-| `ALLOWED_TELEGRAM_USER_IDS` | A comma-separated list of Telegram user IDs that are allowed to interact with the bot (use [getidsbot](https://t.me/getidsbot) to find your user ID). **Note**: by default, *everyone* is allowed (`*`)                       |
+- 🌐 **Protocol-Level Vendor Independence**: Built strictly on the standard OpenAI API specification. Compatible out-of-the-box with official APIs, aggregation gateways (e.g. OneAPI, NewAPI, OpenRouter), and self-hosted inference runtimes (e.g. vLLM, Ollama, LocalAI). Easily connect models across Claude, Grok, DeepSeek, Gemini, and GPT families.
+- 🧠 **Adaptive Long-Term Memory**: Integrates the [mem0ai/mem0](https://github.com/mem0ai/mem0) memory framework with an embedded local Qdrant vector database. It continuously extracts personal preferences and facts in the background, allowing the AI to retain context across conversations.
+- ⚡ **Zero-Downtime Hot-Switching**: Switch reasoning models and TTS voice timbres on the fly via Telegram native inline keyboards without touching config files or restarting the bot.
+- 📑 **Comprehensive Multimodal Processing**: Unifies text, voice notes, photos, albums, PDF, Word, Excel, PowerPoint documents, and short video clips into a single conversational interface.
+- 🛡️ **Production-Grade Concurrency Protection**: Features custom album debouncing (`MediaGroupCollector`), per-chat vision semaphores, and streaming timeout fuses to completely eliminate event loop freezing under rapid concurrent messaging.
 
-### Optional configuration
-The following parameters are optional and can be set in the `.env` file:
+---
 
-#### Budgets
-| Parameter             | Description                                                                                                                                                                                                                                                                                                                                                                               | Default value      |
-|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
-| `BUDGET_PERIOD`       | Determines the time frame all budgets are applied to. Available periods: `daily` *(resets budget every day)*, `monthly` *(resets budgets on the first of each month)*, `all-time` *(never resets budget)*. See the [Budget Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/184) for more information                                                                  | `monthly`          |
-| `USER_BUDGETS`        | A comma-separated list of $-amounts per user from list `ALLOWED_TELEGRAM_USER_IDS` to set custom usage limit of OpenAI API costs for each. For `*`- user lists the first `USER_BUDGETS` value is given to every user. **Note**: by default, *no limits* for any user (`*`). See the [Budget Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/184) for more information | `*`                |
-| `GUEST_BUDGET`        | $-amount as usage limit for all guest users. Guest users are users in group chats that are not in the `ALLOWED_TELEGRAM_USER_IDS` list. Value is ignored if no usage limits are set in user budgets (`USER_BUDGETS`=`*`). See the [Budget Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/184) for more information                                                   | `100.0`            |
-| `TOKEN_PRICE`         | $-price per 1000 tokens used to compute cost information in usage statistics. Source: https://openai.com/pricing                                                                                                                                                                                                                                                                          | `0.002`            |
-| `IMAGE_PRICES`        | A comma-separated list with 3 elements of prices for the different image sizes: `256x256`, `512x512` and `1024x1024`. Source: https://openai.com/pricing                                                                                                                                                                                                                                  | `0.016,0.018,0.02` |
-| `TRANSCRIPTION_PRICE` | USD-price for one minute of audio transcription. Source: https://openai.com/pricing                                                                                                                                                                                                                                                                                                       | `0.006`            |
-| `VISION_TOKEN_PRICE`  | USD-price per 1K tokens of image interpretation. Source: https://openai.com/pricing                                                                                                                                                                                                                                                                                                       | `0.01`             |
-| `TTS_PRICES`          | A comma-separated list with prices for the tts models: `tts-1`, `tts-1-hd`. Source: https://openai.com/pricing                                                                                                                                                                                                                                                                            | `0.015,0.030`      |
+## System Architecture
 
-Check out the [Budget Manual](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/184) for possible budget configurations.
+```mermaid
+flowchart TD
+    User([Telegram User / Group]) <--> TG_API[Telegram Bot API]
+    TG_API <--> BotCore[Verse Bot Core Dispatcher]
 
-#### Additional optional configuration options
-| Parameter                           | Description                                                                                                                                                                                                                                                                             | Default value                      |
-|-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
-| `ENABLE_QUOTING`                    | Whether to enable message quoting in private chats                                                                                                                                                                                                                                      | `true`                             |
-| `ENABLE_IMAGE_GENERATION`           | Whether to enable image generation via the `/image` command                                                                                                                                                                                                                             | `true`                             |
-| `ENABLE_TRANSCRIPTION`              | Whether to enable transcriptions of audio and video messages                                                                                                                                                                                                                            | `true`                             |
-| `ENABLE_TTS_GENERATION`             | Whether to enable text to speech generation via the `/tts`                                                                                                                                                                                                                              | `true`                             |
-| `ENABLE_VISION`                     | Whether to enable vision capabilities in supported models                                                                                                                                                                                                                               | `true`                             |
-| `PROXY`                             | Proxy to be used for OpenAI and Telegram bot (e.g. `http://localhost:8080`)                                                                                                                                                                                                             | -                                  |
-| `OPENAI_PROXY`                      | Proxy to be used only for OpenAI (e.g. `http://localhost:8080`)                                                                                                                                                                                                                         | -                                  |
-| `TELEGRAM_PROXY`                    | Proxy to be used only for Telegram bot (e.g. `http://localhost:8080`)                                                                                                                                                                                                                   | -                                  |
-| `OPENAI_MODEL`                      | The OpenAI model to use for generating responses. You can find all available models [here](https://platform.openai.com/docs/models/)                                                                                                                                                    | `gpt-4o`                           |
-| `OPENAI_BASE_URL`                   | Endpoint URL for unofficial OpenAI-compatible APIs (e.g., LocalAI or text-generation-webui)                                                                                                                                                                                             | Default OpenAI API URL             |
-| `ASSISTANT_PROMPT`                  | A system message that sets the tone and controls the behavior of the assistant                                                                                                                                                                                                          | `You are a helpful assistant.`     |
-| `SHOW_USAGE`                        | Whether to show OpenAI token usage information after each response                                                                                                                                                                                                                      | `false`                            |
-| `STREAM`                            | Whether to stream responses. **Note**: incompatible, if enabled, with `N_CHOICES` higher than 1                                                                                                                                                                                         | `true`                             |
-| `MAX_TOKENS`                        | Upper bound on how many tokens the ChatGPT API will return                                                                                                                                                                                                                              | `1200` for GPT-3, `2400` for GPT-4 |
-| `VISION_MAX_TOKENS`                 | Upper bound on how many tokens vision models will return                                                                                                                                                                                                                                | `300` for gpt-4o                   |
-| `VISION_MODEL`                      | The Vision to Speech model to use. Allowed values: `gpt-4o`                                                                                                                                                                                                                             | `gpt-4o`                           |
-| `ENABLE_VISION_FOLLOW_UP_QUESTIONS` | If true, once you send an image to the bot, it uses the configured VISION_MODEL until the conversation ends. Otherwise, it uses the OPENAI_MODEL to follow the conversation. Allowed values: `true` or `false`                                                                          | `true`                             |
-| `MAX_HISTORY_SIZE`                  | Max number of messages to keep in memory, after which the conversation will be summarised to avoid excessive token usage                                                                                                                                                                | `15`                               |
-| `MAX_CONVERSATION_AGE_MINUTES`      | Maximum number of minutes a conversation should live since the last message, after which the conversation will be reset                                                                                                                                                                 | `180`                              |
-| `VOICE_REPLY_WITH_TRANSCRIPT_ONLY`  | Whether to answer to voice messages with the transcript only or with a ChatGPT response of the transcript                                                                                                                                                                               | `false`                            |
-| `VOICE_REPLY_PROMPTS`               | A semicolon separated list of phrases (i.e. `Hi bot;Hello chat`). If the transcript starts with any of them, it will be treated as a prompt even if `VOICE_REPLY_WITH_TRANSCRIPT_ONLY` is set to `true`                                                                                 | -                                  |
-| `VISION_PROMPT`                     | A phrase (i.e. `What is in this image`). The vision models use it as prompt to interpret a given image. If there is caption in the image sent to the bot, that supersedes this parameter                                                                                                | `What is in this image`            |
-| `N_CHOICES`                         | Number of answers to generate for each input message. **Note**: setting this to a number higher than 1 will not work properly if `STREAM` is enabled                                                                                                                                    | `1`                                |
-| `TEMPERATURE`                       | Number between 0 and 2. Higher values will make the output more random                                                                                                                                                                                                                  | `1.0`                              |
-| `PRESENCE_PENALTY`                  | Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far                                                                                                                                                                        | `0.0`                              |
-| `FREQUENCY_PENALTY`                 | Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far                                                                                                                                                                   | `0.0`                              |
-| `IMAGE_FORMAT`                      | The Telegram image receive mode. Allowed values: `document` or `photo`                                                                                                                                                                                                                  | `photo`                            |
-| `IMAGE_MODEL`                       | The image model to be used. Available models: `gpt-image-2`, `dall-e-2` and `dall-e-3`, find current available OpenAI models [here](https://platform.openai.com/docs/models/dall-e)                                       | `gpt-image-2`                      |
-| `IMAGE_QUALITY`                     | Quality of DALL·E images, only available for `dall-e-3`-model. Possible options: `standard` or `hd`, beware of [pricing differences](https://openai.com/pricing#image-models).                                                                                                          | `standard`                         |
-| `IMAGE_STYLE`                       | Style for DALL·E image generation, only available for `dall-e-3`-model. Possible options: `vivid` or `natural`. Check availbe styles [here](https://openai.com/docs/api-reference/images/create).                                                                              | `vivid`                            |
-| `IMAGE_SIZE`                        | The DALL·E generated image size. Must be `256x256`, `512x512`, or `1024x1024` for dall-e-2. Must be `1024x1024` for dall-e-3 models.                                                                                                                                                    | `512x512`                          |
-| `VISION_DETAIL`                     | The detail parameter for vision models, explained [Vision Guide](https://platform.openai.com/docs/guides/vision). Allowed values: `low` or `high`                                                                                                                                       | `auto`                             |
-| `GROUP_TRIGGER_KEYWORD`             | If set, the bot in group chats will only respond to messages that start with this keyword                                                                                                                                                                                               | -                                  |
-| `IGNORE_GROUP_TRANSCRIPTIONS`       | If set to true, the bot will not process transcriptions in group chats                                                                                                                                                                                                                  | `true`                             |
-| `IGNORE_GROUP_VISION`               | If set to true, the bot will not process vision queries in group chats                                                                                                                                                                                                                  | `true`                             |
-| `BOT_LANGUAGE`                      | Language of general bot messages. Currently available: `en`, `de`, `ru`, `tr`, `it`, `fi`, `es`, `id`, `nl`, `zh-cn`, `zh-tw`, `vi`, `fa`, `pt-br`, `uk`, `ms`, `uz`, `ar`.  [Contribute with additional translations](https://github.com/n3d1117/chatgpt-telegram-bot/discussions/219) | `en`                               |
-| `WHISPER_PROMPT`                    | To improve the accuracy of Whisper's transcription service, especially for specific names or terms, you can set up a custom message.  [Speech to text - Prompting](https://platform.openai.com/docs/guides/speech-to-text/prompting)                                                    | `-`                                |
-| `TTS_VOICE`                         | The Text to Speech voice to use. Allowed values: `alloy`, `echo`, `fable`, `onyx`, `nova`, or `shimmer`                                                                                                                                                                                 | `alloy`                            |
-| `TTS_MODEL`                         | The Text to Speech model to use. Allowed values: `tts-1` or `tts-1-hd`                                                                                                                                                                                                                  | `tts-1`                            |
+    subgraph Core[Middleware & Concurrency Guards]
+        BotCore --> MediaGroup[Album Debounce Collector MediaGroupCollector]
+        BotCore --> StreamLimiter[Dynamic Rate Limiter StreamCutoff]
+        BotCore --> SemaphoreLock[Per-Chat Vision Semaphore Guard]
+    end
 
-Check out the [official API reference](https://platform.openai.com/docs/api-reference/chat) for more details.
+    subgraph MemoryEngine[Memory Subsystem]
+        BotCore <--> Mem0[Mem0 Engine mem0ai/mem0]
+        Mem0 <--> Qdrant[(Embedded Qdrant Vector DB)]
+    end
 
-#### Functions
-| Parameter                         | Description                                                                                                                                      | Default value                       |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
-| `ENABLE_FUNCTIONS`                | Whether to use functions (aka plugins). You can read more about functions [here](https://openai.com/blog/function-calling-and-other-api-updates) | `true` (if available for the model) |
-| `FUNCTIONS_MAX_CONSECUTIVE_CALLS` | Maximum number of back-to-back function calls to be made by the model in a single response, before displaying a user-facing message              | `10`                                |
-| `PLUGINS`                         | List of plugins to enable (see below for a full list), e.g: `PLUGINS=wolfram,weather`                                                            | -                                   |
-| `SHOW_PLUGINS_USED`               | Whether to show which plugins were used for a response                                                                                           | `false`                             |
+    subgraph Plugins[Tools & Multimodal Parsers]
+        BotCore --> DocParser[Office / PDF Native Extractor]
+        BotCore --> VideoIntel[Google Cloud Video Intelligence]
+        BotCore --> WebSearch[Real-Time Web Search Tavily / DDG]
+        BotCore --> AudioPipe[FFmpeg In-Memory Opus Pipeline]
+    end
 
-#### Available plugins
-| Name                      | Description                                                                                                                                         | Required environment variable(s)                                     | Dependency          |
-|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|---------------------|
-| `weather`                 | Daily weather and 7-day forecast for any location (powered by [Open-Meteo](https://open-meteo.com))                                                 | -                                                                    |                     |
-| `wolfram`                 | WolframAlpha queries (powered by [WolframAlpha](https://www.wolframalpha.com))                                                                      | `WOLFRAM_APP_ID`                                                     | `wolframalpha`      |
-| `ddg_web_search`          | Web search (powered by [DuckDuckGo](https://duckduckgo.com))                                                                                        | -                                                                    | `duckduckgo_search` |
-| `ddg_image_search`        | Search image or GIF (powered by [DuckDuckGo](https://duckduckgo.com))                                                                               | -                                                                    | `duckduckgo_search` |
-| `web_image_embed`         | Embed web images inline in LLM answers (powered by [DuckDuckGo](https://duckduckgo.com))                                                            | -                                                                    | `duckduckgo_search` |
-| `crypto`                  | Live cryptocurrencies rate (powered by [CoinCap](https://coincap.io)) - by [@stumpyfr](https://github.com/stumpyfr)                                 | -                                                                    |                     |
-| `spotify`                 | Spotify top tracks/artists, currently playing song and content search (powered by [Spotify](https://spotify.com)). Requires one-time authorization. | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI` | `spotipy`           |
-| `worldtimeapi`            | Get latest world time (powered by [WorldTimeAPI](https://worldtimeapi.org/)) - by [@noriellecruz](https://github.com/noriellecruz)                  | `WORLDTIME_DEFAULT_TIMEZONE`                                         |                     |
-| `dice`                    | Send a dice in the chat!                                                                                                                            | -                                                                    |                     |
-| `youtube_audio_extractor` | Extract audio from YouTube videos                                                                                                                   | -                                                                    | `pytube`            |
-| `deepl_translate`         | Translate text to any language (powered by [DeepL](https://deepl.com)) - by [@LedyBacer](https://github.com/LedyBacer)                              | `DEEPL_API_KEY`                                                      |                     |
-| `gtts_text_to_speech`     | Text to speech (powered by Google Translate APIs)                                                                                                   | -                                                                    | `gtts`              |
-| `whois`                   | Query the whois domain database - by [@jnaskali](https://github.com/jnaskali)                                                                       | -                                                                    | `whois`             |
-| `webshot`                 | Screenshot a website from a given url or domain name - by [@noriellecruz](https://github.com/noriellecruz)                                          | -                                                                    |                     |
-| `auto_tts`                | Text to speech using OpenAI APIs - by [@Jipok](https://github.com/Jipok)                                                                            | -                                                                    |                     |
-
-#### Environment variables
-| Variable                          | Description                                                                                                                                                                                     | Default value                       |
-|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
-| `WOLFRAM_APP_ID`                  | Wolfram Alpha APP ID (required only for the `wolfram` plugin, you can get one [here](https://products.wolframalpha.com/simple-api/documentation))                                               | -                                   |
-| `SPOTIFY_CLIENT_ID`               | Spotify app Client ID (required only for the `spotify` plugin, you can find it on the [dashboard](https://developer.spotify.com/dashboard/))                                                    | -                                   |
-| `SPOTIFY_CLIENT_SECRET`           | Spotify app Client Secret (required only for the `spotify` plugin, you can find it on the [dashboard](https://developer.spotify.com/dashboard/))                                                | -                                   |
-| `SPOTIFY_REDIRECT_URI`            | Spotify app Redirect URI (required only for the `spotify` plugin, you can find it on the [dashboard](https://developer.spotify.com/dashboard/))                                                 | -                                   |
-| `WORLDTIME_DEFAULT_TIMEZONE`      | Default timezone to use, i.e. `Europe/Rome` (required only for the `worldtimeapi` plugin, you can get TZ Identifiers from [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)) | -                                   |
-| `DUCKDUCKGO_SAFESEARCH`           | DuckDuckGo safe search (`on`, `off` or `moderate`) (optional, applies to `ddg_web_search` and `ddg_image_search`)                                                                               | `moderate`                          |
-| `DEEPL_API_KEY`                   | DeepL API key (required for the `deepl` plugin, you can get one [here](https://www.deepl.com/pro-api?cta=header-pro-api))                                                                       | -                                   |
-
-### Installing
-Clone the repository and navigate to the project directory:
-
-```shell
-git clone https://github.com/n3d1117/chatgpt-telegram-bot.git
-cd chatgpt-telegram-bot
+    subgraph LLMEndpoints[Inference Providers]
+        BotCore <--> AnyLLM[OpenAI-Compatible Endpoints\nClaude / DeepSeek / Grok / GPT]
+        BotCore <--> ImageGen[Text-to-Image / Image-to-Image Models]
+        AudioPipe <--> AnyTTS[Fish Audio / OpenAI TTS / Local Voice Engines]
+    end
 ```
 
-#### From Source
-1. Create a virtual environment:
-```shell
-python -m venv venv
+---
+
+## Feature Showcase & Demonstrations
+
+### 1. Core Conversation & UX
+
+- **Streaming Typewriter Output**: Consumes model completions via async chunk streams. The stream interval is dynamically calculated according to message length to ensure typewriter responsiveness while strictly adhering to Telegram API flood rate limits.
+- **Smart Markdown Fallback**: Automatically catches Telegram entity parsing errors (such as unclosed code fences or tags) and cleanly falls back to safe formatted plain text, guaranteeing 100% message delivery.
+- **Automated History Summarization**: Maintains active context history queues. When messages exceed `MAX_HISTORY_SIZE` or age past `MAX_CONVERSATION_AGE_MINUTES`, an automatic background summary is synthesized to retain long-term context while minimizing token overhead.
+- **Media Group (Album) Debouncing**: When multiple photos are sent simultaneously as a Telegram album, `MediaGroupCollector` batches them within an 0.8s sliding window into a single multi-image Vision request, preventing concurrent request flooding.
+
+![Verse Bot Welcome Interface and Available Commands](docs/images/01-start-welcome.png)
+
+---
+
+### 2. Dynamic Multi-Model Hot-Switching
+
+- **Interactive Command**: Trigger the `/model` command to open an inline keyboard menu displaying the currently active model and available options.
+- **Persistent Preferences**: Model choices can also be specified via arguments (e.g. `/model your-model-id`). Selections are isolated per `chat_id` and saved across session resets.
+
+![Multi-Model Hot-Switching Interactive Menu](docs/images/02-model-switch.png)
+
+![Multi-Turn Dialogue with Claude 4.5](docs/images/03-chat-conversation.png)
+
+---
+
+### 3. Real-Time Web Search & Source Citations
+
+- **Explicit Search (`/search`)**: Queries live web sources, aggregates facts through the active model, and provides a structured response complete with clickable reference URLs.
+- **Autonomous Function Calling**: During regular chat, if the model identifies that an answer requires up-to-date information, it autonomously invokes search plugins before formulating its response.
+
+![Real-Time Web Search with Source Link Citations](docs/images/04-web-search.png)
+
+---
+
+### 4. Multimodal Image Generation & Reference Editing
+
+- **Text-to-Image with Argument Parsing**: Use `/image <prompt>` to generate artwork. Supports flags directly in the prompt (such as `--ar 16:9`, `--ar 9:16`, `--ar 1:1`, or `--size 1792x1024`), handling both English and full-width punctuation.
+- **Multi-Reference Image-to-Image**: Reply to any photo in chat with `/image <instructions>` or send an image with an `/image` caption; the pipeline automatically extracts reference frames and sends them to image editing endpoints.
+- **Delivery Mode**: Supports both standard photo compression (`reply_photo`) and lossless document delivery (`reply_document`).
+
+![High Quality Shinkai-Style AI Image Generation](docs/images/05-image-generation.jpg)
+
+---
+
+### 5. Lifelike Dual-Engine TTS & Voice Matrix
+
+- **Text-to-Voice (`/tts`)**: Converts text into lifelike speech and pipes audio directly into Telegram's native Opus voice bubble format via an in-memory FFmpeg process.
+- **Voice Timbre Selection (`/voice`)**: Switch voice personas on the fly. Seamlessly supports lifelike voice-cloning endpoints (such as Fish Audio REST API) as well as standard OpenAI TTS protocols.
+
+![TTS Voice Timbre Switching Panel](docs/images/06-voice-switch.png)
+
+![Speech Synthesis Generating Native Telegram Voice Note](docs/images/07-tts-audio.png)
+
+---
+
+### 6. Whisper Speech Transcription & Video Intelligence
+
+- **Audio & Voice Note Transcription**: Automatically converts incoming audio clips and voice notes to MP3 via `pydub` and routes them to a Whisper-compatible endpoint. Can be configured to output pure transcripts or feed the text into chat.
+- **Video Semantic Analysis**: Integrates with Google Cloud Video Intelligence to extract visual labels, OCR text, shot boundaries, and embedded speech from video clips and circular video notes.
+
+---
+
+### 7. Mem0 Long-Term Vector Memory
+
+- **Automatic Fact Extraction**: Powered by [mem0ai/mem0](https://github.com/mem0ai/mem0). A background thread asynchronously processes conversations to extract user facts, preferences, and details without blocking response times.
+- **Embedded Local Storage**: Utilizes an embedded **Qdrant** vector database (stored in the root `mem0_db/` directory), eliminating the need for standalone database services.
+- **Context Injection**: Dynamically injects relevant user facts into the system prompt via `<User_Core_Memory>` tags for tailored responses.
+
+---
+
+### 8. Native Office Document Parsing
+
+Provides lightweight, direct text extraction from common office documents without requiring external microservices:
+
+- **PDF Documents (`.pdf`)**: Powered by `pypdf` for page-level text extraction.
+- **Word Documents (`.docx`)**: Powered by `python-docx` for paragraphs and table contents.
+- **Excel Spreadsheets (`.xlsx`)**: Powered by `openpyxl` to iterate through multi-sheet rows.
+- **PowerPoint Decks (`.pptx`)**: Powered by `python-pptx` to extract slide text shapes and tables.
+- **Buffer Protection**: Automatically enforces a 50,000 character safety truncation limit to prevent overflowing context windows.
+
+---
+
+### 9. Access Control & Usage Budget Tracking
+
+- **Tiered Access**: Configurable administrator IDs (`ADMIN_USER_IDS`) and user whitelists (`ALLOWED_TELEGRAM_USER_IDS`) with polite rejection messages for unauthorized callers.
+- **Cost & Token Tracking (`/stats`)**: The `UsageTracker` module tracks daily and monthly token consumption, image generation counts, Vision tokens, TTS character counts, and transcription durations, enforcing periodic budget caps.
+
+---
+
+## Tech Stack & Project Structure
+
+### Core Technology Matrix
+
+| Layer | Library / Technology | Core Responsibility |
+| :--- | :--- | :--- |
+| **Bot Framework** | `python-telegram-bot` (v21.9) | Async event polling, inline keyboards, message routing |
+| **Model Protocol** | `openai` (v1.58+), `tiktoken`, `tenacity` | Protocol abstraction, token counting, retry fault tolerance |
+| **Async Network** | `httpx`, `requests`, `asyncio` | High-concurrency async I/O, streaming completions |
+| **Long-Term Memory** | `mem0ai`, `qdrant-client` | Asynchronous fact extraction, embedded vector persistence |
+| **Media Transcoding**| `pydub`, `FFmpeg`, `Pillow` | In-memory audio pipeline, image manipulation and decoding |
+| **Document Engine** | `pypdf`, `python-docx`, `openpyxl`, `python-pptx` | Native document parsing without external services |
+| **Web Grounding** | `tavily-python`, `duckduckgo_search` | Real-time search retrieval, structured citations |
+| **Orchestration** | `Docker`, `Docker Compose`, `Systemd` | Isolated deployments, process self-healing |
+
+### Project Tree
+
+```text
+verse-telegram-bot/
+├── bot/
+│   ├── plugins/                      # Agent tool plugins
+│   │   ├── mem0_memory.py            # Mem0 vector memory plugin
+│   │   ├── tavily_search.py          # Real-time web search plugin
+│   │   ├── web_image_embed.py        # Web image retrieval and embedding
+│   │   ├── weather.py                # Weather query plugin
+│   │   ├── wolfram_alpha.py          # Wolfram Alpha computational knowledge
+│   │   └── ...                       # Additional utility plugins
+│   ├── document_parser.py            # PDF / Word / Excel / PPTX document extraction
+│   ├── main.py                       # Application lifecycle and entrypoint
+│   ├── media_group.py                # Telegram album debounce collector
+│   ├── openai_helper.py              # LLM communication layer (streaming, Vision, TTS)
+│   ├── plugin_manager.py             # Function calling dynamic dispatcher
+│   ├── telegram_bot.py               # Telegram event handling and command routing
+│   ├── usage_tracker.py              # Token accounting and budget monitoring
+│   ├── utils.py                      # Markdown fallback, image parsing, helpers
+│   └── video_helper.py               # Video intelligence analysis adapter
+├── docs/
+│   └── images/                       # Documentation screenshots
+│       ├── 01-start-welcome.png
+│       ├── 02-model-switch.png
+│       ├── 03-chat-conversation.png
+│       ├── 04-web-search.png
+│       ├── 05-image-generation.jpg
+│       ├── 06-voice-switch.png
+│       └── 07-tts-audio.png
+├── mem0_db/                          # Local embedded Qdrant database storage
+├── usage_logs/                       # Persistent usage logs and billings
+├── .env                              # Environment variables (created from .env.example)
+├── Dockerfile                        # Container build definition
+├── docker-compose.yml                # Docker Compose orchestration
+├── requirements.txt                  # Python dependencies
+├── system_prompt.txt                 # Global base system prompt
+├── translations.json                 # Multi-language localization dictionary
+└── README.md                         # Primary English documentation
 ```
 
-2. Activate the virtual environment:
-```shell
-# For Linux or macOS:
+---
+
+## Quick Start: Step-by-Step Guide
+
+### Prerequisites: Obtaining Necessary Credentials
+
+1. **Create and Configure a Telegram Bot Token**:
+   - Open Telegram and message [@BotFather](https://t.me/BotFather), then send `/newbot`.
+   - Set a display name (e.g. `Verse Assistant`) and a username ending in `bot` (e.g. `my_verse_ai_bot`).
+   - Copy and store the returned HTTP API token string (formatted like `1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ`).
+   - *(Recommended)*: Send `/setprivacy` to BotFather -> Select your bot -> Choose `Disable` to allow the bot to respond in group chats.
+2. **Find Your Telegram User ID**:
+   - Message [@userinfobot](https://t.me/userinfobot) on Telegram.
+   - Copy the numeric `Id` returned (e.g. `123456789`).
+3. **Obtain LLM API Credentials**:
+   - Prepare your API Key and Base URL from any OpenAI-compatible provider (e.g. OpenAI, OpenRouter, DeepSeek, or local gateways).
+4. **Obtain Auxiliary Service Keys (Optional)**:
+   - **Web Search**: Register for an API key at [Tavily](https://tavily.com/) if using live `/search`.
+   - **Lifelike TTS**: Register at [Fish Audio](https://fish.audio/) or configure custom voice model IDs for speech synthesis.
+
+---
+
+### Option 1: Local Development (Python Virtual Environment)
+
+Suitable for local development and testing on Windows, macOS, or Linux.
+
+#### Step 1: Install Python 3.11+ and FFmpeg
+
+- **Python**:
+  - Windows: Download from the [Python Official Site](https://www.python.org/downloads/) (make sure to check **"Add python.exe to PATH"**).
+  - macOS: Run `brew install python@3.11`.
+  - Linux (Ubuntu/Debian): Run `sudo apt update && sudo apt install -y python3.11 python3.11-venv python3-pip`.
+- **FFmpeg (Required for voice features)**:
+  - Windows: Run `winget install Gyan.FFmpeg` in PowerShell, or download and add its `bin` folder to the PATH environment variable.
+  - macOS: Run `brew install ffmpeg`.
+  - Linux (Ubuntu/Debian): Run `sudo apt install -y ffmpeg`.
+  - Verify installation: Run `ffmpeg -version` in your terminal.
+
+#### Step 2: Clone the Repository and Setup Virtual Environment
+
+```bash
+# 1. Clone repository
+git clone https://github.com/hermes186/verse-telegram-bot.git
+cd verse-telegram-bot
+
+# 2. Create isolated virtual environment
+python3 -m venv venv
+
+# 3. Activate virtual environment
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# Linux / macOS:
 source venv/bin/activate
 
-# For Windows:
-venv\Scripts\activate
-```
-
-3. Install the dependencies using `requirements.txt` file:
-```shell
+# 4. Install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-4. Use the following command to start the bot:
+#### Step 3: Configure Environment Variables
+
+Create your `.env` file from the provided template:
+
+```bash
+cp .env.example .env
 ```
+
+Open `.env` in any text editor and fill in your parameters (replace placeholders with actual values):
+
+```ini
+# Required: Telegram Bot Token from @BotFather
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+
+# Required: Large Language Model API Key and Base URL (compatible with any OpenAI-style endpoint)
+OPENAI_API_KEY=your_llm_api_key_here
+OPENAI_BASE_URL=https://your-api-provider.com/v1
+
+# Access Control: Admin IDs and allowed user IDs (comma-separated, * allows all)
+ADMIN_USER_IDS=your_admin_telegram_user_id
+ALLOWED_TELEGRAM_USER_IDS=your_allowed_user_id_1,your_allowed_user_id_2
+
+# Model List Configuration (comma-separated, selectable via /model)
+OPENAI_MODEL=your_default_model_id
+OPENAI_MODELS=your_default_model_id,your_secondary_model_id,your_tertiary_model_id
+
+# Image Generation Configuration
+ENABLE_IMAGE_GENERATION=true
+IMAGE_MODEL=your_image_model_id
+IMAGE_SIZE=1024x1024
+
+# Web Search Plugin Configuration (example with Tavily)
+ENABLE_FUNCTIONS=true
+PLUGINS=tavily_search,mem0_memory,web_image_embed
+TAVILY_API_KEY=your_search_api_key_here
+
+# TTS Configuration (example with Fish Audio or OpenAI-compatible speech services)
+ENABLE_TTS_GENERATION=true
+TTS_BASE_URL=https://your-tts-provider.com/v1
+TTS_API_KEY=your_tts_api_key_here
+TTS_MODEL=your_tts_model_id
+TTS_VOICES="voice_reference_id_1:VoiceName1,voice_reference_id_2:VoiceName2"
+
+# Network Proxy (Optional: set if your environment requires a proxy to access Telegram or APIs)
+# PROXY=http://127.0.0.1:7890
+```
+
+#### Step 4: Run the Bot
+
+```bash
 python bot/main.py
 ```
 
-#### Using Docker Compose
+Expected startup logs:
 
-Run the following command to build and run the Docker image:
-```shell
-docker compose up
+```text
+2026-09-05 20:00:00,123 - root - INFO - Successfully initialized VideoIntelligenceServiceClient
+2026-09-05 20:00:01,456 - bot.telegram_bot - INFO - Bot started polling. Listening for updates...
 ```
 
-#### Ready-to-use Docker images
-You can also use the Docker image from [Docker Hub](https://hub.docker.com/r/n3d1117/chatgpt-telegram-bot):
-```shell
-docker pull n3d1117/chatgpt-telegram-bot:latest
-docker run -it --env-file .env n3d1117/chatgpt-telegram-bot
+Open Telegram, send `/start` to your bot, and begin chatting.
+
+---
+
+### Option 2: Local Containerization (Docker Compose)
+
+Ideal for developers who prefer running services inside clean containers.
+
+#### 1. Verify Docker Engine
+
+Ensure Docker and Docker Compose are installed:
+
+```bash
+docker --version
+docker compose version
 ```
 
-or using the [GitHub Container Registry](https://github.com/n3d1117/chatgpt-telegram-bot/pkgs/container/chatgpt-telegram-bot/):
+#### 2. Build and Launch
 
-```shell
-docker pull ghcr.io/n3d1117/chatgpt-telegram-bot:latest
-docker run -it --env-file .env ghcr.io/n3d1117/chatgpt-telegram-bot
+Ensure your `.env` file is configured, then run:
+
+```bash
+# Build and run containers in background
+docker compose up -d --build
+
+# View real-time logs
+docker compose logs -f
+
+# Stop containers
+docker compose down
 ```
 
-#### Docker manual build
-```shell
-docker build -t chatgpt-telegram-bot .
-docker run -it --env-file .env chatgpt-telegram-bot
+---
+
+### Option 3: Linux VPS Production Deployment
+
+Designed for 24/7 uptime on cloud servers running Linux distributions (Ubuntu, Debian, CentOS, Rocky Linux, etc.).
+
+#### Base Setup: Connection and Environment Preparation
+
+```bash
+# 1. SSH into your VPS
+ssh user@your_vps_ip
+
+# 2. Update system packages
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl wget ufw
+
+# 3. Configure firewall (Verse uses Long Polling, requiring NO inbound ports; keep SSH open)
+sudo ufw allow ssh
+sudo ufw enable
+
+# 4. Clone repository and prepare environment
+cd /opt
+sudo git clone https://github.com/hermes186/verse-telegram-bot.git
+sudo chown -R $USER:$USER /opt/verse-telegram-bot
+cd /opt/verse-telegram-bot
+cp .env.example .env
+nano .env  # Edit your configuration, save and exit
 ```
 
-#### Heroku
-Here is an example of `Procfile` for deploying using Heroku (thanks [err09r](https://github.com/err09r)!):
+---
+
+#### Method A: Docker Compose Orchestration (Recommended)
+
+Container deployment encapsulates Python 3.11 and FFmpeg, provides auto-restart policies, and isolates the host system.
+
+1. **Install Latest Docker and Docker Compose Plugin**:
+
+```bash
+# Install Docker via official convenience script
+curl -fsSL https://get.docker.com | sh
+
+# Add current user to docker group
+sudo usermod -aG docker $USER
+
+# Enable and start Docker service
+sudo systemctl enable --now docker
+
+# Verify installation
+docker --version
+docker compose version
 ```
-worker: python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && python bot/main.py
+
+2. **Launch and Monitor**:
+
+```bash
+cd /opt/verse-telegram-bot
+
+# Build and start in background (restart: unless-stopped is enabled by default)
+docker compose up -d --build
+
+# Follow live logs
+docker compose logs -f
+
+# Check container health status
+docker compose ps
 ```
 
-## Credits
-- [ChatGPT](https://chat.openai.com/chat) from [OpenAI](https://openai.com)
-- [python-telegram-bot](https://python-telegram-bot.org)
-- [jiaaro/pydub](https://github.com/jiaaro/pydub)
+3. **Maintenance and Updates**:
 
-## Disclaimer
-This is a personal project and is not affiliated with OpenAI in any way.
+```bash
+cd /opt/verse-telegram-bot
+git pull
+docker compose up -d --build
+```
 
-## License
-This project is released under the terms of the GPL 2.0 license. For more information, see the [LICENSE](LICENSE) file included in the repository.
+---
+
+#### Method B: Native Systemd Daemon Service
+
+If you prefer running directly on the host system without containers, manage the process with Systemd.
+
+1. **Install Host Dependencies**:
+
+```bash
+sudo apt install -y python3.11 python3.11-venv python3-pip ffmpeg
+```
+
+2. **Setup Virtual Environment and Packages**:
+
+```bash
+cd /opt/verse-telegram-bot
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+3. **Create Systemd Service Unit**:
+
+```bash
+sudo nano /etc/systemd/system/verse-bot.service
+```
+
+Paste the unit definition:
+
+```ini
+[Unit]
+Description=Verse Telegram Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/verse-telegram-bot
+ExecStart=/opt/verse-telegram-bot/venv/bin/python /opt/verse-telegram-bot/bot/main.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/opt/verse-telegram-bot/.env
+
+[Install]
+WantedBy=multi-user.target
+```
+
+4. **Enable and Start Service**:
+
+```bash
+# Reload unit files
+sudo systemctl daemon-reload
+
+# Enable service and start immediately
+sudo systemctl enable --now verse-bot
+
+# Check status (should display active running)
+sudo systemctl status verse-bot
+
+# View live system logs
+journalctl -u verse-bot -f
+```
+
+---
+
+#### Advanced Note: Polling vs Webhook Architecture
+
+Verse runs by default on **Long Polling (`run_polling`)**.
+- **Benefits of Polling**: No public IP, domain name, or SSL certificate required. Immune to external port scanning and zero inbound firewall attack surface.
+- **Webhook Mode (Optional)**: If required by your infrastructure, bind a reverse proxy like Nginx or Caddy with Let's Encrypt TLS termination to pass updates to a local listening port, then register your endpoint via Telegram's `setWebhook` API. For general personal and group bot setups, Long Polling is strongly recommended.
+
+---
+
+## Environment Variables Reference
+
+> [!IMPORTANT]
+> To guarantee total independence from specific providers, all default values for `model id` and `base url` variables are set to **None**. Please configure them explicitly according to your chosen provider.
+
+| Variable | Required | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `TELEGRAM_BOT_TOKEN` | **Yes** | None | Telegram Bot token obtained from [@BotFather](https://t.me/BotFather) |
+| `OPENAI_API_KEY` | **Yes** | None | Primary API Key for LLM chat completions and summaries |
+| `OPENAI_BASE_URL` | No | None | Base URL for LLM completions (e.g. proxy, router, or gateway endpoint) |
+| `OPENAI_MODEL` | No | None | Default chat model ID |
+| `OPENAI_MODELS` | No | None | Comma-separated list of model IDs available in the `/model` selector |
+| `ADMIN_USER_IDS` | No | `-` | Comma-separated list of Telegram User IDs with admin privileges |
+| `ALLOWED_TELEGRAM_USER_IDS` | No | `*` | Allowed Telegram User IDs (* allows any user) |
+| `ENABLE_QUOTING` | No | `true` | Whether the bot quotes user messages in replies |
+| `STREAM` | No | `true` | Enables streaming typewriter response output |
+| `MAX_TOKENS` | No | Inferred | Maximum completion tokens allowed per response |
+| `MAX_HISTORY_SIZE` | No | `15` | Number of recent messages retained in conversation history |
+| `MAX_CONVERSATION_AGE_MINUTES`| No | `180` | Context window lifespan in minutes before automatic reset |
+| `ENABLE_IMAGE_GENERATION` | No | `true` | Enables `/image` image generation commands |
+| `IMAGE_API_KEY` | No | Same as `OPENAI_API_KEY` | Dedicated API Key for image generation if separate from chat API |
+| `IMAGE_MODEL` | No | None | Image generation model ID |
+| `IMAGE_SIZE` | No | `1024x1024` | Default resolution for image generation |
+| `IMAGE_FORMAT` | No | `photo` | Delivery mode: `photo` (compressed) or `document` (lossless file) |
+| `ENABLE_VISION` | No | `true` | Enables multi-modal image understanding capabilities |
+| `VISION_DETAIL` | No | `auto` | Vision image detail fidelity (`low`, `high`, `auto`) |
+| `ENABLE_TTS_GENERATION` | No | `true` | Enables text-to-speech `/tts` and `/voice` features |
+| `TTS_BASE_URL` | No | None | API Base URL for text-to-speech services |
+| `TTS_API_KEY` | No | Same as `OPENAI_API_KEY` | API Key for text-to-speech service |
+| `TTS_MODEL` | No | None | Speech synthesis model ID |
+| `TTS_VOICE` | No | None | Default voice timbre ID or reference_id |
+| `TTS_VOICES` | No | Default single voice | List of voice timbres for `/voice` menu (`id1:Name1,id2:Name2`) |
+| `ENABLE_TRANSCRIPTION` | No | `true` | Enables Whisper audio transcription |
+| `AUDIO_BASE_URL` | No | None | Base URL for audio transcription API |
+| `AUDIO_API_KEY` | No | Same as `OPENAI_API_KEY` | API Key for audio transcription service |
+| `AUDIO_MODEL` | No | None | Model ID for audio transcription |
+| `ENABLE_FUNCTIONS` | No | `true` | Enables Function Calling and agent plugins |
+| `PLUGINS` | No | None | Comma-separated list of enabled plugins (e.g. `tavily_search,mem0_memory`) |
+| `TAVILY_API_KEY` | No | None | API Key for Tavily search provider |
+| `MEM0_API_KEY` | No | Same as `OPENAI_API_KEY` | API Key used by Mem0 for LLM fact extraction |
+| `MEM0_BASE_URL` | No | None | Base URL used by Mem0 for LLM fact extraction |
+| `MEM0_MODEL` | No | None | Model ID used by Mem0 for fact extraction |
+| `MEM0_EMBEDDER_BASE_URL` | No | None | Base URL for the Mem0 vector embedding model |
+| `MEM0_EMBEDDER_MODEL` | No | None | Embedding model ID for vector memory |
+| `MEM0_EMBEDDER_DIMS` | No | `1536` | Embedding vector dimensions (must match the embedding model) |
+| `ENABLE_VIDEO_INTELLIGENCE` | No | `false` | Enables Google Cloud Video Intelligence analysis |
+| `GOOGLE_APPLICATION_CREDENTIALS`| No | None | Path to Google Cloud Service Account JSON credentials |
+| `PROXY` | No | None | HTTP/SOCKS5 proxy address (e.g. `http://127.0.0.1:7890`) |
+| `BUDGET_PERIOD` | No | `monthly` | Budget tracking cycle (`monthly`, `daily`) |
+| `USER_BUDGETS` | No | `*` | Individual user budget cap in USD (* for unlimited) |
+| `BOT_LANGUAGE` | No | `en` | UI response and localization language (`en`, `zh`, `ru`, `es`, etc.) |
+
+---
+
+## Troubleshooting & FAQ
+
+### 1. Startup Error: Missing TELEGRAM_BOT_TOKEN or Required Variables
+
+- **Cause**: The `.env` file is missing, cannot be loaded, or required fields are unset.
+- **Solution**:
+  1. Confirm that `.env` exists in the project root directory (not `.env.example` or `.env.txt`).
+  2. Verify that `TELEGRAM_BOT_TOKEN` and `OPENAI_API_KEY` are populated without extra spaces around the equals sign.
+
+### 2. Connection Failure: TimedOut or Network is unreachable
+
+- **Cause**: The host machine cannot reach Telegram API endpoints (`api.telegram.org`) due to network policies, DNS failures, or firewall restrictions.
+- **Solution**:
+  1. Check network connectivity with `curl -I https://api.telegram.org`.
+  2. If running within a restricted network or behind a proxy, set the `PROXY` variable in `.env`:
+     ```ini
+     PROXY=http://127.0.0.1:7890
+     ```
+  3. Ensure outbound HTTPS traffic (TCP port 443) is allowed in your security groups and firewall.
+
+### 3. Voice Generation Error: ffmpeg was not found or Transcoding Failure
+
+- **Cause**: FFmpeg is not installed or not discoverable in the system PATH.
+- **Solution**:
+  - Windows: Run `winget install Gyan.FFmpeg` and reopen your terminal, or manually append the directory containing `ffmpeg.exe` to PATH.
+  - Linux: Install via package manager (`sudo apt install -y ffmpeg`).
+  - Run `ffmpeg -version` to verify it is accessible from the command line.
+
+### 4. Speech Synthesis Error: HTTP 400 or Invalid Voice ID
+
+- **Cause**: The TTS API Key, model identifier, or voice ID in `TTS_VOICES` is invalid or expired.
+- **Solution**:
+  1. Ensure `TTS_API_KEY` has active credits and quota.
+  2. Verify that voice IDs configured in `TTS_VOICES` match valid models available on your chosen TTS platform.
+
+### 5. Mem0 Vector Database Error: Dimension Mismatch or Qdrant Exceptions
+
+- **Cause**: The `MEM0_EMBEDDER_DIMS` value does not match the actual dimension output of the configured `MEM0_EMBEDDER_MODEL` (e.g. 1536 vs 2048).
+- **Solution**:
+  1. Ensure `MEM0_EMBEDDER_DIMS` matches your model specification.
+  2. If switching embedding models, remove the old local database directory to rebuild:
+     ```bash
+     rm -rf mem0_db/
+     ```
+
+### 6. Media Group Latency or Freeze When Sending Multiple Images
+
+- **Cause**: Upstream implementations trigger concurrent independent API requests for each photo in an album, consuming connections and blocking the async event loop.
+- **Solution**: Verse includes a built-in `MediaGroupCollector` debouncer and per-chat semaphore lock (`_vision_semaphores`). Ensure you are using the latest version of the repository.
+
+---
+
+## Acknowledgements & License
+
+Verse Telegram Bot is an extension of [n3d1117/chatgpt-telegram-bot](https://github.com/n3d1117/chatgpt-telegram-bot) and is licensed under the [GNU General Public License v3.0 (GPLv3)](LICENSE).
+
+Special thanks to **Nicola Di Marco (n3d1117)** and the open-source community for laying the foundational architecture.
+
+### Key Enhancements in Verse
+
+1. **Dynamic Multi-Model Hot-Switching**: Complete routing refactor allowing users to switch models via inline keyboards on the fly.
+2. **Long-Term Vector Memory**: Integration with [mem0ai/mem0](https://github.com/mem0ai/mem0) and local embedded Qdrant for continuous persona learning.
+3. **Comprehensive Native Document Extraction**: Native parsing for PDF, Word, Excel, and PowerPoint files without external microservice dependencies.
+4. **Lifelike Audio Engine**: Support for high-fidelity voice cloning protocols and standard TTS with in-memory FFmpeg Opus packaging.
+5. **Anti-Freeze Concurrency Guards**: Debounce album collectors and session semaphores preventing event loop starvation.
