@@ -100,7 +100,7 @@ flowchart TD
 - **Automated History Summarization**: Maintains active context history queues. When messages exceed `MAX_HISTORY_SIZE` or age past `MAX_CONVERSATION_AGE_MINUTES`, an automatic background summary is synthesized to retain long-term context while minimizing token overhead.
 - **Media Group (Album) Debouncing**: When multiple photos are sent simultaneously as a Telegram album, `MediaGroupCollector` batches them within an 0.8s sliding window into a single multi-image Vision request, preventing concurrent request flooding.
 
-![Verse Bot Welcome Interface and Available Commands](docs/images/01-start-welcome.png)
+![Verse Bot Welcome Interface and Available Commands](./docs/images/01-start-welcome.png)
 
 ---
 
@@ -109,9 +109,9 @@ flowchart TD
 - **Interactive Command**: Trigger the `/model` command to open an inline keyboard menu displaying the currently active model and available options.
 - **Persistent Preferences**: Model choices can also be specified via arguments (e.g. `/model your-model-id`). Selections are isolated per `chat_id` and saved across session resets.
 
-![Multi-Model Hot-Switching Interactive Menu](docs/images/02-model-switch.png)
+![Multi-Model Hot-Switching Interactive Menu](./docs/images/02-model-switch.png)
 
-![Multi-Turn Dialogue with Claude 4.5](docs/images/03-chat-conversation.png)
+![Multi-Turn Dialogue with Claude 4.5](./docs/images/03-chat-conversation.png)
 
 ---
 
@@ -120,7 +120,7 @@ flowchart TD
 - **Explicit Search (`/search`)**: Queries live web sources, aggregates facts through the active model, and provides a structured response complete with clickable reference URLs.
 - **Autonomous Function Calling**: During regular chat, if the model identifies that an answer requires up-to-date information, it autonomously invokes search plugins before formulating its response.
 
-![Real-Time Web Search with Source Link Citations](docs/images/04-web-search.png)
+![Real-Time Web Search with Source Link Citations](./docs/images/04-web-search.png)
 
 ---
 
@@ -130,7 +130,7 @@ flowchart TD
 - **Multi-Reference Image-to-Image**: Reply to any photo in chat with `/image <instructions>` or send an image with an `/image` caption; the pipeline automatically extracts reference frames and sends them to image editing endpoints.
 - **Delivery Mode**: Supports both standard photo compression (`reply_photo`) and lossless document delivery (`reply_document`).
 
-![High Quality Shinkai-Style AI Image Generation](docs/images/05-image-generation.jpg)
+![High Quality Shinkai-Style AI Image Generation](./docs/images/05-image-generation.jpg)
 
 ---
 
@@ -139,9 +139,9 @@ flowchart TD
 - **Text-to-Voice (`/tts`)**: Converts text into lifelike speech and pipes audio directly into Telegram's native Opus voice bubble format via an in-memory FFmpeg process.
 - **Voice Timbre Selection (`/voice`)**: Switch voice personas on the fly. Seamlessly supports lifelike voice-cloning endpoints (such as Fish Audio REST API) as well as standard OpenAI TTS protocols.
 
-![TTS Voice Timbre Switching Panel](docs/images/06-voice-switch.png)
+![TTS Voice Timbre Switching Panel](./docs/images/06-voice-switch.png)
 
-![Speech Synthesis Generating Native Telegram Voice Note](docs/images/07-tts-audio.png)
+![Speech Synthesis Generating Native Telegram Voice Note](./docs/images/07-tts-audio.png)
 
 ---
 

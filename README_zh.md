@@ -100,7 +100,7 @@ flowchart TD
 - **上下文自动压缩与管理**：会话维护队列窗口，当历史消息超出设定阈值或时间窗口时，自动触发轻量摘要压缩，兼顾超长对话连贯性与 Token 消耗控制。
 - **相册（Album）防抖聚合**：针对 Telegram 分包发送的多图相册，基于 0.8 秒滑动窗口自动收拢为统一图像批次提交多模态大模型，杜绝多图引发的并发轰炸。
 
-![Verse 机器人欢迎界面与可用指令列表](docs/images/01-start-welcome.png)
+![Verse 机器人欢迎界面与可用指令列表](./docs/images/01-start-welcome.png)
 
 ---
 
@@ -109,9 +109,9 @@ flowchart TD
 - **指令触发**：通过 `/model` 指令即刻呼出内联交互面板（Inline Keyboard）。
 - **即时生效与记忆隔离**：支持可视化点击切换，亦可通过 `/model <model_id>` 快捷传参。不同聊天会话（Chat ID）的模型选择完全隔离并持久化，重启会话依然保持生效。
 
-![多模型热切换交互菜单](docs/images/02-model-switch.png)
+![多模型热切换交互菜单](./docs/images/02-model-switch.png)
 
-![Claude 4.5 模型多轮对话展示](docs/images/03-chat-conversation.png)
+![Claude 4.5 模型多轮对话展示](./docs/images/03-chat-conversation.png)
 
 ---
 
@@ -120,7 +120,7 @@ flowchart TD
 - **显式搜索指令（`/search`）**：调用深度搜索引擎抓取最新全网事实，交由模型进行智能信息重构，并在回答末尾格式化输出可点击的原始网页引用来源。
 - **智能体自主调用（Function Calling）**：在普通聊天中，若模型判断当前问题依赖时效性信息，可自主激活联网工具并在获取背景后合成回复。
 
-![实时联网搜索与新闻溯源整合](docs/images/04-web-search.png)
+![实时联网搜索与新闻溯源整合](./docs/images/04-web-search.png)
 
 ---
 
@@ -130,7 +130,7 @@ flowchart TD
 - **多参考图与图生图（Multi-Reference）**：直接回复群内或私聊中的图片并输入 `/image <修改要求>`，系统自动提取源图特征注入绘图管线，执行迁移变换。
 - **分发格式适配**：支持配置为压缩图片（`reply_photo`）或原始无损文档（`reply_document`）。
 
-![新海诚风格高质量 AI 图像生成效果](docs/images/05-image-generation.jpg)
+![新海诚风格高质量 AI 图像生成效果](./docs/images/05-image-generation.jpg)
 
 ---
 
@@ -139,9 +139,9 @@ flowchart TD
 - **文本转原生语音（`/tts`）**：将指定文本合成为真实人声，并借助本地 FFmpeg 内存管道实时压制为 Telegram 原生标准 `libopus` 48kbps VBR OGG 语音便签。
 - **多音色矩阵（`/voice`）**：支持热切换音色身份，深度兼容拟真人声克隆协议（以 Fish Audio 为例）及 OpenAI 标准通用语音协议。
 
-![TTS 拟真人声音色热切换面板](docs/images/06-voice-switch.png)
+![TTS 拟真人声音色热切换面板](./docs/images/06-voice-switch.png)
 
-![语音合成生成原生 Telegram 语音消息](docs/images/07-tts-audio.png)
+![语音合成生成原生 Telegram 语音消息](./docs/images/07-tts-audio.png)
 
 ---
 
